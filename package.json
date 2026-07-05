@@ -1,0 +1,10 @@
+{
+  "name": "mern-realtime-chat",
+  "version": "1.0.0",
+  "description": "Root workspace for MERN Chat App",
+  "scripts": {
+    "build": "cd backend && npm install && cd ../frontend && npm install && npm run build",
+    "start": "cd backend && npm start",
+    "dev": "cd backend && npm run dev"
+  }
+}
