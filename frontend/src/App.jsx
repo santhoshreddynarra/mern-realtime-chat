@@ -28,8 +28,8 @@ const App = () => {
           <Route index element={<Home />} />
           <Route path="login" element={<Login />} />
           <Route path="signup" element={<Signup />} />
-          <Route path="chat" element={<Chat />} />
         </Route>
+        <Route path="/chat" element={<Chat />} />
       </Routes>
       <Toaster position="top-center" />
     </>

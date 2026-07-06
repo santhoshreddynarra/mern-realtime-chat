@@ -1,8 +1,14 @@
 import { useEffect, useState } from 'react';
 import axiosInstance from '../api/axiosInstance';
 
+import { Navigate } from 'react-router-dom';
+import { useAuthStore } from '../store/useAuthStore';
+
 const Home = () => {
   const [health, setHealth] = useState('Checking server...');
+  const { authUser } = useAuthStore();
+
+  if (authUser) return <Navigate to="/chat" />;
 
   useEffect(() => {
     const checkHealth = async () => {

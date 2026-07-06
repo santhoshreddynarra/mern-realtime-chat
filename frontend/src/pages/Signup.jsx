@@ -6,7 +6,7 @@ const Signup = () => {
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const { signup, authUser } = useAuthStore();
 
-  if (authUser) return <Navigate to="/" />;
+  if (authUser) return <Navigate to="/chat" />;
 
   const handleSubmit = (e) => {
     e.preventDefault();

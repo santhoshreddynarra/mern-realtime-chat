@@ -6,10 +6,12 @@ import useListenMessages from '../hooks/useListenMessages';
 import useTyping from '../hooks/useTyping';
 import Spinner from './Spinner';
 
-const MessageContainer = ({ selectedUser }) => {
+const MessageContainer = ({ selectedUser, setSelectedUser }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isUserNearBottom, setIsUserNearBottom] = useState(true);
+  
   const { authUser } = useAuthStore();
   const messagesEndRef = useRef(null);
   const { isTyping, handleTyping, stopTyping } = useTyping(selectedUser);
@@ -33,20 +35,32 @@ const MessageContainer = ({ selectedUser }) => {
   }, [selectedUser]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setIsUserNearBottom(true); // Reset scroll state when changing chats
+  }, [selectedUser]);
 
-    // Mark messages as read if the chat is open and there are unread messages
+  useEffect(() => {
+    if (isUserNearBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+
     const hasUnread = messages.some(msg => msg.senderId === selectedUser?._id && msg.status !== 'read');
     if (hasUnread && selectedUser) {
       axiosInstance.put(`/messages/read/${selectedUser._id}`).catch(err => console.log('Error marking read:', err));
     }
-  }, [messages, selectedUser]);
+  }, [messages, selectedUser, isUserNearBottom]);
+
+  const handleScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    // Consider near bottom if within 150px
+    setIsUserNearBottom(scrollHeight - scrollTop - clientHeight < 150);
+  };
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
 
-    stopTyping(); // Stop typing immediately upon sending
+    stopTyping();
+    setIsUserNearBottom(true); // Force scroll on self-send
 
     try {
       const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, { message: newMessage });
@@ -59,70 +73,120 @@ const MessageContainer = ({ selectedUser }) => {
 
   if (!selectedUser) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gray-50 h-full">
-        <p className="text-gray-500 font-medium text-lg">Select a chat to start messaging</p>
+      <div className="flex-1 flex flex-col items-center justify-center bg-[#f0f2f5] h-full border-b-[6px] border-[#00a884]">
+        <div className="text-center px-4">
+          <h1 className="text-3xl font-light text-[#41525d] mb-4">MERN Web</h1>
+          <p className="text-[#667781] text-[14px]">Send and receive messages without keeping your phone online.</p>
+          <p className="text-[#667781] text-[14px]">Use WhatsApp-style Real-Time Chat on up to 4 linked devices and 1 phone at the same time.</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-gray-50">
-      <div className="bg-white p-4 border-b flex items-center gap-3 h-18">
-        <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold">
-          {selectedUser.name.charAt(0).toUpperCase()}
+    <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+      {/* Header */}
+      <div className="bg-[#f0f2f5] p-3 flex items-center justify-between shrink-0 h-16 border-l border-gray-200 z-10">
+        <div className="flex items-center gap-3">
+          {/* Back button for mobile */}
+          <button onClick={() => setSelectedUser(null)} className="md:hidden text-[#54656f]">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+              <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path>
+            </svg>
+          </button>
+          
+          <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold">
+            {selectedUser.name.charAt(0).toUpperCase()}
+          </div>
+          <div className="flex flex-col">
+            <span className="font-normal text-[16px] text-[#111b21] leading-tight">{selectedUser.name}</span>
+            <span className={`text-[13px] ${isTyping ? 'text-[#00a884]' : 'text-[#667781]'} h-4`}>
+              {isTyping ? 'typing...' : 'click here for contact info'}
+            </span>
+          </div>
         </div>
-        <div className="flex flex-col">
-          <span className="font-semibold text-gray-800 leading-tight">{selectedUser.name}</span>
-          <span className={`text-xs text-green-500 font-medium h-4 ${isTyping ? 'opacity-100' : 'opacity-0'}`}>
-            typing...
-          </span>
+        
+        {/* Header Icons */}
+        <div className="flex gap-4 text-[#54656f] mr-2">
+          <svg viewBox="0 0 24 24" width="24" height="24" className="cursor-pointer" fill="currentColor"><path d="M15.9 14.3H15l-.3-.3c1-1.1 1.6-2.7 1.6-4.3 0-3.7-3-6.7-6.7-6.7S3 6 3 9.7s3 6.7 6.7 6.7c1.6 0 3.2-.6 4.3-1.6l.3.3v.8l5.1 5.1 1.5-1.5-5-5.2zm-6.2 0c-2.6 0-4.6-2.1-4.6-4.6s2.1-4.6 4.6-4.6 4.6 2.1 4.6 4.6-2-4.6-4.6-4.6z"></path></svg>
+          <svg viewBox="0 0 24 24" width="24" height="24" className="cursor-pointer" fill="currentColor"><path d="M12 7a2 2 0 1 0-.001-4.001A2 2 0 0 0 12 7zm0 2a2 2 0 1 0-.001 3.999A2 2 0 0 0 12 9zm0 6a2 2 0 1 0-.001 3.999A2 2 0 0 0 12 15z"></path></svg>
         </div>
       </div>
 
-      <div className="flex-1 p-4 overflow-y-auto space-y-4">
+      {/* Messages */}
+      <div 
+        className="flex-1 p-4 overflow-y-auto bg-[#efeae2] relative" 
+        onScroll={handleScroll}
+        style={{ backgroundImage: "url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')", backgroundRepeat: 'repeat', backgroundSize: '400px', opacity: 0.9 }}
+      >
         {loading ? (
           <Spinner />
         ) : messages.length === 0 ? (
-          <p className="text-center text-gray-500 mt-10">Send a message to start the conversation.</p>
+          <div className="flex justify-center mt-4">
+            <span className="bg-[#ffeecd] text-[#54656f] text-[12.5px] px-3 py-1.5 rounded-lg shadow-sm text-center">
+              Messages and calls are end-to-end encrypted.<br/>No one outside of this chat can read or listen to them.
+            </span>
+          </div>
         ) : (
-          messages.map((msg) => (
-            <div key={msg._id} className={`flex ${msg.senderId === authUser._id ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[70%] p-3 rounded-lg flex flex-col ${msg.senderId === authUser._id ? 'bg-blue-600 text-white rounded-br-none' : 'bg-gray-200 text-gray-800 rounded-bl-none'}`}>
-                <span className="break-words">{msg.message}</span>
-                {msg.senderId === authUser._id && (
-                  <div className="flex justify-end mt-1 text-[11px] leading-none">
-                    {msg.status === 'read' ? (
-                      <span className="text-blue-300 font-bold tracking-tighter">✓✓</span>
-                    ) : (
-                      <span className="text-blue-200 opacity-70">✓</span>
-                    )}
+          messages.map((msg) => {
+            const isOwn = msg.senderId === authUser._id;
+            const time = new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            return (
+              <div key={msg._id} className={`flex mb-[2px] ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                <div className={`relative max-w-[85%] md:max-w-[65%] px-2 py-1 rounded-lg shadow-sm ${isOwn ? 'bg-[#d9fdd3] rounded-tr-none' : 'bg-white rounded-tl-none'}`}>
+                  <div className="flex flex-col relative">
+                    <span className="text-[14.2px] text-[#111b21] break-words whitespace-pre-wrap pr-[50px] leading-[19px] py-1">{msg.message}</span>
+                    <div className="absolute bottom-[2px] right-0 flex items-center gap-[2px] text-[11px] text-[#667781]">
+                      <span className="leading-none pt-1">{time}</span>
+                      {isOwn && (
+                        msg.status === 'read' ? (
+                          <span className="text-[#53bdeb] font-bold tracking-tighter leading-none pt-1">✓✓</span>
+                        ) : (
+                          <span className="text-gray-400 leading-none pt-1">✓</span>
+                        )
+                      )}
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
-        <div ref={messagesEndRef} />
+        <div ref={messagesEndRef} className="h-2" />
       </div>
 
-      <form onSubmit={handleSendMessage} className="p-4 bg-white border-t flex gap-2">
+      {/* Input */}
+      <form onSubmit={handleSendMessage} className="bg-[#f0f2f5] px-4 py-3 flex items-center gap-3 shrink-0 z-10 border-l border-gray-200">
+        <svg viewBox="0 0 24 24" width="26" height="26" className="text-[#54656f] cursor-pointer shrink-0 hidden md:block" fill="currentColor">
+          <path d="M9.153 11.603c.795 0 1.439-.879 1.439-1.962s-.644-1.962-1.439-1.962-1.439.879-1.439 1.962.644 1.962 1.439 1.962zm-3.204 1.362c-.026-.307-.131 5.218 6.063 5.551 6.066-.25 6.066-5.551 6.066-5.551-6.078 1.416-12.129 0-12.129 0zm11.363 1.108s-.669 1.959-5.051 1.959c-3.379 0-4.782-1.685-5.021-1.936l1.241-.45c.168.214 1.25.922 3.78.922 2.41 0 3.651-.837 3.864-1.002l1.187.507zm-2.023-4.432c.795 0 1.439-.879 1.439-1.962s-.644-1.962-1.439-1.962-1.439.879-1.439 1.962.644 1.962 1.439 1.962z"></path>
+        </svg>
+        <svg viewBox="0 0 24 24" width="26" height="26" className="text-[#54656f] cursor-pointer shrink-0" fill="currentColor">
+          <path d="M1.816 15.556v.002c0 1.502.584 2.912 1.646 3.972s2.472 1.647 3.974 1.647a5.58 5.58 0 0 0 3.972-1.645l9.547-9.548c.769-.768 1.147-1.767 1.058-2.817-.079-.968-.548-1.927-1.319-2.698-1.594-1.592-4.068-1.711-5.517-.262l-7.916 7.915c-.881.881-.792 2.25.214 3.261.959.958 2.423 1.053 3.263.215l5.511-5.512c.28-.28.267-.722.053-.936l-.244-.244c-.191-.191-.567-.349-.957.04l-5.506 5.506c-.18.18-.635.127-.976-.214-.098-.097-.576-.613-.213-.973l7.915-7.917c.818-.817 2.267-.699 3.23.262.5.501.802 1.1.849 1.685.051.573-.156 1.111-.589 1.543l-9.547 9.549a3.97 3.97 0 0 1-2.829 1.171 3.975 3.975 0 0 1-2.83-1.173 3.973 3.973 0 0 1-1.172-2.828c0-1.071.415-2.076 1.172-2.83l7.209-7.211c.157-.264.123-.624-.131-.877l-.242-.242c-.227-.227-.557-.3-.811-.115l-7.203 7.205c-1.422 1.423-2.205 3.313-2.205 5.32z"></path>
+        </svg>
         <input
           type="text"
-          className="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Type a message..."
+          className="flex-1 bg-white border-none rounded-lg px-4 py-[9px] text-[15px] focus:outline-none placeholder-[#8696a0]"
+          placeholder="Type a message"
           value={newMessage}
           onChange={(e) => {
             setNewMessage(e.target.value);
-            if (e.target.value.trim().length > 0) {
-              handleTyping();
-            } else {
-              stopTyping();
-            }
+            if (e.target.value.trim().length > 0) handleTyping();
+            else stopTyping();
           }}
         />
-        <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
-          Send
-        </button>
+        {newMessage.trim().length > 0 ? (
+          <button type="submit" className="text-[#54656f] hover:text-[#00a884] p-1 transition-colors shrink-0">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
+              <path d="M1.101 21.757L23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z"></path>
+            </svg>
+          </button>
+        ) : (
+          <button type="button" className="text-[#54656f] hover:text-[#00a884] p-1 transition-colors shrink-0">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
+              <path d="M11.999 14.942c2.001 0 3.531-1.53 3.531-3.531V4.35c0-2.001-1.53-3.531-3.531-3.531S8.469 2.35 8.469 4.35v7.061c0 2.001 1.53 3.531 3.53 3.531zm6.238-3.53c0 3.531-2.942 6.002-6.237 6.002s-6.237-2.471-6.237-6.002H3.761c0 4.001 3.178 7.297 7.061 7.885v3.884h2.354v-3.884c3.884-.588 7.061-3.884 7.061-7.885h-2.002z"></path>
+            </svg>
+          </button>
+        )}
       </form>
     </div>
   );
