@@ -5,6 +5,16 @@ export const registerUser = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
 
+    if (!name || !email || !password) {
+      res.status(400);
+      throw new Error('Please add all fields');
+    }
+
+    if (password.length < 6) {
+      res.status(400);
+      throw new Error('Password must be at least 6 characters');
+    }
+
     const userExists = await User.findOne({ email });
     if (userExists) {
       res.status(400);
@@ -33,6 +43,12 @@ export const registerUser = async (req, res, next) => {
 export const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+    
+    if (!email || !password) {
+      res.status(400);
+      throw new Error('Please add all fields');
+    }
+
     const user = await User.findOne({ email });
 
     if (user && (await user.matchPassword(password))) {
