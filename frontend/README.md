@@ -1,16 +1,30 @@
-# React + Vite
+# MERN Real-Time Chat App
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A full-stack real-time chat application built using the MERN stack (MongoDB, Express, React, Node.js) and Socket.io.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Real-time messaging using Socket.io
+- User authentication and authorization (JWT)
+- Online user status tracking
+- Responsive modern UI built with Tailwind CSS v4
+- Global state management with Zustand
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Frontend**: React, Vite, Tailwind CSS, Zustand, React Router
+- **Backend**: Node.js, Express, MongoDB, Mongoose, Socket.io
+- **Authentication**: JWT (JSON Web Tokens) with HTTP-only cookies
 
-## Expanding the Oxlint configuration
+## Getting Started
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+1. Clone the repository
+2. Install dependencies for both frontend and backend:
+   ```bash
+   npm run build
+   ```
+3. Create a `.env` file in the `backend` directory with your `MONGODB_URI` and `JWT_SECRET`.
+4. Run the development servers:
+   ```bash
+   npm run dev:all
+   ```

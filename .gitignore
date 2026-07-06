@@ -1,5 +1,32 @@
-node_modules
+# Dependencies
+node_modules/
+
+# Environment variables
 .env
-dist
-build
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+build/
+
+# OS artifacts
 .DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test coverage
+coverage/
