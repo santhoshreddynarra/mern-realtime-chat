@@ -24,15 +24,33 @@ export const sendMessage = async (req, res, next) => {
       message,
     });
 
-    if (newMessage) {
-      conversation.messages.push(newMessage._id);
-    }
+    conversation.messages.push(newMessage._id);
+    conversation.lastMessage = message;
+    conversation.lastMessageAt = new Date();
 
     await Promise.all([conversation.save(), newMessage.save()]);
 
+    // Emit new message to receiver
     const receiverSocketId = getReceiverSocketId(receiverId);
     if (receiverSocketId) {
       io.to(receiverSocketId).emit('newMessage', newMessage);
+    }
+
+    // Emit conversation update to BOTH participants so their sidebars refresh
+    const convUpdate = {
+      conversationId: conversation._id,
+      senderId,
+      receiverId,
+      lastMessage: message,
+      lastMessageAt: conversation.lastMessageAt,
+    };
+
+    const senderSocketId = getReceiverSocketId(senderId.toString());
+    if (senderSocketId) {
+      io.to(senderSocketId).emit('conversation:update', convUpdate);
+    }
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit('conversation:update', convUpdate);
     }
 
     res.status(201).json(newMessage);
@@ -48,7 +66,7 @@ export const getMessages = async (req, res, next) => {
 
     const conversation = await Conversation.findOne({
       participants: { $all: [senderId, userToChatId] },
-    }).populate('messages'); 
+    }).populate('messages');
 
     if (!conversation) return res.status(200).json([]);
 
@@ -60,15 +78,14 @@ export const getMessages = async (req, res, next) => {
 
 export const markMessagesAsRead = async (req, res, next) => {
   try {
-    const { id: senderId } = req.params; // The other user's ID
-    const receiverId = req.user._id; // The logged in user's ID
+    const { id: senderId } = req.params;
+    const receiverId = req.user._id;
 
     await Message.updateMany(
       { senderId, receiverId, status: 'sent' },
       { $set: { status: 'read' } }
     );
 
-    // Notify the sender that their messages were read
     const senderSocketId = getReceiverSocketId(senderId);
     if (senderSocketId) {
       io.to(senderSocketId).emit('messages:read', { readerId: receiverId });

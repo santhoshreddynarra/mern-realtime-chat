@@ -11,9 +11,16 @@ const conversationSchema = new mongoose.Schema({
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Message',
-      default: []
     }
-  ]
+  ],
+  lastMessage: {
+    type: String,
+    default: '',
+  },
+  lastMessageAt: {
+    type: Date,
+    default: null,
+  },
 }, { timestamps: true });
 
 const Conversation = mongoose.model('Conversation', conversationSchema);

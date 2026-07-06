@@ -132,11 +132,16 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
             const isOwn = msg.senderId === authUser._id;
             const time = new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             return (
-              <div key={msg._id} className={`flex mb-[2px] ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                <div className={`relative max-w-[85%] md:max-w-[65%] px-2 py-1 rounded-lg shadow-sm ${isOwn ? 'bg-[#d9fdd3] rounded-tr-none' : 'bg-white rounded-tl-none'}`}>
-                  <div className="flex flex-col relative">
-                    <span className="text-[14.2px] text-[#111b21] break-words whitespace-pre-wrap pr-[50px] leading-[19px] py-1">{msg.message}</span>
-                    <div className="absolute bottom-[2px] right-0 flex items-center gap-[2px] text-[11px] text-[#667781]">
+              <div key={msg._id} className={`flex mb-[2px] w-full ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                <div className={`relative max-w-[85%] md:max-w-[65%] min-w-0 px-2 py-1 rounded-lg shadow-sm ${isOwn ? 'bg-[#d9fdd3] rounded-tr-none' : 'bg-white rounded-tl-none'}`}>
+                  <div className="flex flex-col relative w-full">
+                    <span 
+                      className="text-[14.2px] text-[#111b21] break-words whitespace-pre-wrap pr-[50px] leading-[19px] py-1"
+                      style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
+                    >
+                      {msg.message}
+                    </span>
+                    <div className="absolute bottom-[2px] right-0 flex items-center gap-[2px] text-[11px] text-[#667781] shrink-0">
                       <span className="leading-none pt-1">{time}</span>
                       {isOwn && (
                         msg.status === 'read' ? (

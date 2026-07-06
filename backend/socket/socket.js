@@ -11,11 +11,11 @@ const io = new Server(server, {
   },
 });
 
+const userSocketMap = {};
+
 export const getReceiverSocketId = (receiverId) => {
   return userSocketMap[receiverId];
 };
-
-const userSocketMap = {}; 
 
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
@@ -26,6 +26,20 @@ io.on('connection', (socket) => {
   }
 
   io.emit('getOnlineUsers', Object.keys(userSocketMap));
+
+  socket.on('typing:start', ({ receiverId }) => {
+    const receiverSocketId = getReceiverSocketId(receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit('typing:start', { senderId: userId });
+    }
+  });
+
+  socket.on('typing:stop', ({ receiverId }) => {
+    const receiverSocketId = getReceiverSocketId(receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit('typing:stop', { senderId: userId });
+    }
+  });
 
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);

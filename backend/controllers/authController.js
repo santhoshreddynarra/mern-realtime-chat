@@ -3,11 +3,11 @@ import generateToken from '../utils/generateToken.js';
 
 export const registerUser = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, username, phone } = req.body;
 
     if (!name || !email || !password) {
       res.status(400);
-      throw new Error('Please add all fields');
+      throw new Error('Please add all required fields');
     }
 
     if (password.length < 6) {
@@ -18,10 +18,32 @@ export const registerUser = async (req, res, next) => {
     const userExists = await User.findOne({ email });
     if (userExists) {
       res.status(400);
-      throw new Error('User already exists');
+      throw new Error('User already exists with this email');
     }
 
-    const user = await User.create({ name, email, password });
+    if (username) {
+      const usernameExists = await User.findOne({ username: username.toLowerCase() });
+      if (usernameExists) {
+        res.status(400);
+        throw new Error('Username already taken');
+      }
+    }
+
+    if (phone) {
+      const phoneExists = await User.findOne({ phone });
+      if (phoneExists) {
+        res.status(400);
+        throw new Error('Phone number already registered');
+      }
+    }
+
+    const user = await User.create({
+      name,
+      email,
+      password,
+      username: username ? username.toLowerCase() : undefined,
+      phone: phone || undefined,
+    });
 
     if (user) {
       generateToken(res, user._id);
@@ -29,7 +51,10 @@ export const registerUser = async (req, res, next) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        username: user.username,
+        phone: user.phone,
         profilePic: user.profilePic,
+        about: user.about,
       });
     } else {
       res.status(400);
@@ -43,7 +68,7 @@ export const registerUser = async (req, res, next) => {
 export const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    
+
     if (!email || !password) {
       res.status(400);
       throw new Error('Please add all fields');
@@ -57,7 +82,10 @@ export const loginUser = async (req, res, next) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        username: user.username,
+        phone: user.phone,
         profilePic: user.profilePic,
+        about: user.about,
       });
     } else {
       res.status(401);
