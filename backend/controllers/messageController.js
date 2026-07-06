@@ -57,3 +57,25 @@ export const getMessages = async (req, res, next) => {
     next(error);
   }
 };
+
+export const markMessagesAsRead = async (req, res, next) => {
+  try {
+    const { id: senderId } = req.params; // The other user's ID
+    const receiverId = req.user._id; // The logged in user's ID
+
+    await Message.updateMany(
+      { senderId, receiverId, status: 'sent' },
+      { $set: { status: 'read' } }
+    );
+
+    // Notify the sender that their messages were read
+    const senderSocketId = getReceiverSocketId(senderId);
+    if (senderSocketId) {
+      io.to(senderSocketId).emit('messages:read', { readerId: receiverId });
+    }
+
+    res.status(200).json({ message: 'Messages marked as read' });
+  } catch (error) {
+    next(error);
+  }
+};

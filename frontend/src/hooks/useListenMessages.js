@@ -7,11 +7,25 @@ const useListenMessages = (messages, setMessages) => {
   useEffect(() => {
     if (!socket) return;
 
-    socket.on('newMessage', (newMessage) => {
+    const handleNewMessage = (newMessage) => {
       setMessages((prevMessages) => [...prevMessages, newMessage]);
-    });
+    };
 
-    return () => socket.off('newMessage');
+    const handleMessagesRead = ({ readerId }) => {
+      setMessages((prevMessages) => 
+        prevMessages.map((msg) => 
+          msg.receiverId === readerId ? { ...msg, status: 'read' } : msg
+        )
+      );
+    };
+
+    socket.on('newMessage', handleNewMessage);
+    socket.on('messages:read', handleMessagesRead);
+
+    return () => {
+      socket.off('newMessage', handleNewMessage);
+      socket.off('messages:read', handleMessagesRead);
+    };
   }, [socket, setMessages]);
 };
 
