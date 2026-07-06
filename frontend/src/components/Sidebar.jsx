@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import axiosInstance from '../api/axiosInstance';
 import { useSocketStore } from '../store/useSocketStore';
 import toast from 'react-hot-toast';
+import Spinner from './Spinner';
 
 const Sidebar = ({ selectedUser, setSelectedUser }) => {
   const [users, setUsers] = useState([]);
@@ -28,7 +29,7 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
         Contacts
       </div>
       {loading ? (
-        <div className="p-4 text-center text-gray-500">Loading...</div>
+        <Spinner />
       ) : (
         users.map((user) => {
           const isOnline = onlineUsers.includes(user._id);

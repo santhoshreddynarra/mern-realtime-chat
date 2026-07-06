@@ -3,6 +3,7 @@ import axiosInstance from '../api/axiosInstance';
 import { useAuthStore } from '../store/useAuthStore';
 import toast from 'react-hot-toast';
 import useListenMessages from '../hooks/useListenMessages';
+import Spinner from './Spinner';
 
 const MessageContainer = ({ selectedUser }) => {
   const [messages, setMessages] = useState([]);
@@ -65,7 +66,7 @@ const MessageContainer = ({ selectedUser }) => {
 
       <div className="flex-1 p-4 overflow-y-auto space-y-4">
         {loading ? (
-          <p className="text-center text-gray-500">Loading messages...</p>
+          <Spinner />
         ) : messages.length === 0 ? (
           <p className="text-center text-gray-500 mt-10">Send a message to start the conversation.</p>
         ) : (
