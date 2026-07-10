@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import axiosInstance from '../api/axiosInstance';
 import toast from 'react-hot-toast';
 import Spinner from './Spinner';
@@ -10,24 +10,32 @@ const NewChatSidebar = ({ isOpen, onClose, setSelectedUser }) => {
   const [loading, setLoading] = useState(false);
   const { createConversation } = useConversationStore();
 
-  const handleSearch = async (e) => {
+  const debounceTimeout = useRef(null);
+
+  const handleSearch = (e) => {
     const query = e.target.value;
     setSearch(query);
+
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current);
+    }
 
     if (query.trim().length === 0) {
       setResults([]);
       return;
     }
 
-    setLoading(true);
-    try {
-      const res = await axiosInstance.get(`/users/search?q=${query}`);
-      setResults(res.data);
-    } catch (error) {
-      toast.error('Search failed');
-    } finally {
-      setLoading(false);
-    }
+    debounceTimeout.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res = await axiosInstance.get(`/users/search?q=${query}`);
+        setResults(res.data);
+      } catch (error) {
+        toast.error('Search failed');
+      } finally {
+        setLoading(false);
+      }
+    }, 300); // 300ms debounce
   };
 
   const handleUserSelect = async (user) => {

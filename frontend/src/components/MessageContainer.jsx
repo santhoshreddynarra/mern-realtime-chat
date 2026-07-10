@@ -10,6 +10,7 @@ import Spinner from './Spinner';
 const MessageContainer = ({ selectedUser, setSelectedUser }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
+  const [replyingTo, setReplyingTo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isUserNearBottom, setIsUserNearBottom] = useState(true);
   
@@ -65,9 +66,13 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
     setIsUserNearBottom(true); // Force scroll on self-send
 
     try {
-      const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, { message: newMessage });
+      const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, { 
+        message: newMessage,
+        replyTo: replyingTo ? replyingTo._id : null
+      });
       setMessages([...messages, res.data]);
       setNewMessage('');
+      setReplyingTo(null);
     } catch (error) {
       toast.error('Failed to send message');
     }
@@ -148,12 +153,40 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
             const isOwn = msg.senderId === authUser._id;
             const time = new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             return (
-              <div key={msg._id} className={`flex mb-[2px] w-full ${isOwn ? 'justify-end' : 'justify-start'}`}>
+              <div key={msg._id} className={`flex mb-[2px] w-full group ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                {/* Reply button for received messages */}
+                {!isOwn && (
+                  <button onClick={() => setReplyingTo(msg)} className="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-gray-500 hover:text-gray-700 mt-1" title="Reply">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                      <path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"></path>
+                    </svg>
+                  </button>
+                )}
+                
                 <div className={`relative max-w-[85%] md:max-w-[65%] min-w-0 px-2 py-1 rounded-lg shadow-sm ${isOwn ? 'bg-[#d9fdd3] rounded-tr-none' : 'bg-white rounded-tl-none'}`}>
                   <div className="flex flex-col relative w-full">
+                    
+                    {/* Quoted Reply Block */}
+                    {msg.replyTo && (
+                      <div className="bg-black/5 rounded-[4px] p-2 mb-1 mt-1 border-l-[4px] border-[#02a884] flex flex-col cursor-pointer" 
+                           onClick={() => {
+                             // Optional: scroll to original message
+                             const originalMsgEl = document.getElementById(`msg-${msg.replyTo._id}`);
+                             if (originalMsgEl) originalMsgEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                           }}>
+                        <span className="text-[#02a884] text-[12.5px] font-medium leading-none mb-1">
+                          {msg.replyTo.senderId === authUser._id ? 'You' : selectedUser.name}
+                        </span>
+                        <span className="text-[#667781] text-[13px] leading-[18px] line-clamp-3 overflow-hidden text-ellipsis break-words">
+                          {msg.replyTo.message}
+                        </span>
+                      </div>
+                    )}
+
                     <span 
                       className="text-[14.2px] text-[#111b21] break-words whitespace-pre-wrap pr-[50px] leading-[19px] py-1"
                       style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
+                      id={`msg-${msg._id}`}
                     >
                       {msg.message}
                     </span>
@@ -169,6 +202,15 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
                     </div>
                   </div>
                 </div>
+
+                {/* Reply button for sent messages */}
+                {isOwn && (
+                  <button onClick={() => setReplyingTo(msg)} className="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-gray-500 hover:text-gray-700 mt-1" title="Reply">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                      <path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"></path>
+                    </svg>
+                  </button>
+                )}
               </div>
             );
           })
@@ -176,39 +218,68 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
         <div ref={messagesEndRef} className="h-2" />
       </div>
 
-      {/* Input */}
-      <form onSubmit={handleSendMessage} className="bg-[#f0f2f5] px-4 py-3 flex items-center gap-3 shrink-0 z-10 border-l border-gray-200">
-        <svg viewBox="0 0 24 24" width="26" height="26" className="text-[#54656f] cursor-pointer shrink-0 hidden md:block" fill="currentColor">
-          <path d="M9.153 11.603c.795 0 1.439-.879 1.439-1.962s-.644-1.962-1.439-1.962-1.439.879-1.439 1.962.644 1.962 1.439 1.962zm-3.204 1.362c-.026-.307-.131 5.218 6.063 5.551 6.066-.25 6.066-5.551 6.066-5.551-6.078 1.416-12.129 0-12.129 0zm11.363 1.108s-.669 1.959-5.051 1.959c-3.379 0-4.782-1.685-5.021-1.936l1.241-.45c.168.214 1.25.922 3.78.922 2.41 0 3.651-.837 3.864-1.002l1.187.507zm-2.023-4.432c.795 0 1.439-.879 1.439-1.962s-.644-1.962-1.439-1.962-1.439.879-1.439 1.962.644 1.962 1.439 1.962z"></path>
-        </svg>
-        <svg viewBox="0 0 24 24" width="26" height="26" className="text-[#54656f] cursor-pointer shrink-0" fill="currentColor">
-          <path d="M1.816 15.556v.002c0 1.502.584 2.912 1.646 3.972s2.472 1.647 3.974 1.647a5.58 5.58 0 0 0 3.972-1.645l9.547-9.548c.769-.768 1.147-1.767 1.058-2.817-.079-.968-.548-1.927-1.319-2.698-1.594-1.592-4.068-1.711-5.517-.262l-7.916 7.915c-.881.881-.792 2.25.214 3.261.959.958 2.423 1.053 3.263.215l5.511-5.512c.28-.28.267-.722.053-.936l-.244-.244c-.191-.191-.567-.349-.957.04l-5.506 5.506c-.18.18-.635.127-.976-.214-.098-.097-.576-.613-.213-.973l7.915-7.917c.818-.817 2.267-.699 3.23.262.5.501.802 1.1.849 1.685.051.573-.156 1.111-.589 1.543l-9.547 9.549a3.97 3.97 0 0 1-2.829 1.171 3.975 3.975 0 0 1-2.83-1.173 3.973 3.973 0 0 1-1.172-2.828c0-1.071.415-2.076 1.172-2.83l7.209-7.211c.157-.264.123-.624-.131-.877l-.242-.242c-.227-.227-.557-.3-.811-.115l-7.203 7.205c-1.422 1.423-2.205 3.313-2.205 5.32z"></path>
-        </svg>
-        <input
-          type="text"
-          className="flex-1 bg-white border-none rounded-lg px-4 py-[9px] text-[15px] focus:outline-none placeholder-[#8696a0]"
-          placeholder="Type a message"
-          value={newMessage}
-          onChange={(e) => {
-            setNewMessage(e.target.value);
-            if (e.target.value.trim().length > 0) handleTyping();
-            else stopTyping();
-          }}
-        />
-        {newMessage.trim().length > 0 ? (
-          <button type="submit" className="text-[#54656f] hover:text-[#00a884] p-1 transition-colors shrink-0">
-            <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
-              <path d="M1.101 21.757L23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z"></path>
-            </svg>
-          </button>
-        ) : (
-          <button type="button" className="text-[#54656f] hover:text-[#00a884] p-1 transition-colors shrink-0">
-            <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
-              <path d="M11.999 14.942c2.001 0 3.531-1.53 3.531-3.531V4.35c0-2.001-1.53-3.531-3.531-3.531S8.469 2.35 8.469 4.35v7.061c0 2.001 1.53 3.531 3.53 3.531zm6.238-3.53c0 3.531-2.942 6.002-6.237 6.002s-6.237-2.471-6.237-6.002H3.761c0 4.001 3.178 7.297 7.061 7.885v3.884h2.354v-3.884c3.884-.588 7.061-3.884 7.061-7.885h-2.002z"></path>
-            </svg>
-          </button>
+      {/* Input Area */}
+      <div className="flex flex-col z-10 shrink-0 border-l border-gray-200">
+        
+        {/* Reply Preview */}
+        {replyingTo && (
+          <div className="bg-[#f0f2f5] px-4 pt-2 flex items-center relative">
+            <div className="bg-black/5 rounded-[4px] p-2 border-l-[4px] border-[#02a884] flex-1 flex items-start justify-between">
+              <div className="flex flex-col w-full">
+                <span className="text-[#02a884] text-[12.5px] font-medium leading-none mb-1">
+                  {replyingTo.senderId === authUser._id ? 'You' : selectedUser.name}
+                </span>
+                <span className="text-[#667781] text-[13px] leading-[18px] line-clamp-1 overflow-hidden text-ellipsis break-words">
+                  {replyingTo.message}
+                </span>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setReplyingTo(null)}
+                className="text-[#54656f] hover:text-black ml-4 shrink-0 transition-colors"
+                title="Cancel reply"
+              >
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                  <path d="M19.1 17.7l-1.4 1.4L12 13.4l-5.7 5.7-1.4-1.4L10.6 12 4.9 6.3l1.4-1.4L12 10.6l5.7-5.7 1.4 1.4L13.4 12z"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
         )}
-      </form>
+
+        <form onSubmit={handleSendMessage} className="bg-[#f0f2f5] px-4 py-3 flex items-center gap-3">
+          <svg viewBox="0 0 24 24" width="26" height="26" className="text-[#54656f] cursor-pointer shrink-0 hidden md:block" fill="currentColor">
+            <path d="M9.153 11.603c.795 0 1.439-.879 1.439-1.962s-.644-1.962-1.439-1.962-1.439.879-1.439 1.962.644 1.962 1.439 1.962zm-3.204 1.362c-.026-.307-.131 5.218 6.063 5.551 6.066-.25 6.066-5.551 6.066-5.551-6.078 1.416-12.129 0-12.129 0zm11.363 1.108s-.669 1.959-5.051 1.959c-3.379 0-4.782-1.685-5.021-1.936l1.241-.45c.168.214 1.25.922 3.78.922 2.41 0 3.651-.837 3.864-1.002l1.187.507zm-2.023-4.432c.795 0 1.439-.879 1.439-1.962s-.644-1.962-1.439-1.962-1.439.879-1.439 1.962.644 1.962 1.439 1.962z"></path>
+          </svg>
+          <svg viewBox="0 0 24 24" width="26" height="26" className="text-[#54656f] cursor-pointer shrink-0" fill="currentColor">
+            <path d="M1.816 15.556v.002c0 1.502.584 2.912 1.646 3.972s2.472 1.647 3.974 1.647a5.58 5.58 0 0 0 3.972-1.645l9.547-9.548c.769-.768 1.147-1.767 1.058-2.817-.079-.968-.548-1.927-1.319-2.698-1.594-1.592-4.068-1.711-5.517-.262l-7.916 7.915c-.881.881-.792 2.25.214 3.261.959.958 2.423 1.053 3.263.215l5.511-5.512c.28-.28.267-.722.053-.936l-.244-.244c-.191-.191-.567-.349-.957.04l-5.506 5.506c-.18.18-.635.127-.976-.214-.098-.097-.576-.613-.213-.973l7.915-7.917c.818-.817 2.267-.699 3.23.262.5.501.802 1.1.849 1.685.051.573-.156 1.111-.589 1.543l-9.547 9.549a3.97 3.97 0 0 1-2.829 1.171 3.975 3.975 0 0 1-2.83-1.173 3.973 3.973 0 0 1-1.172-2.828c0-1.071.415-2.076 1.172-2.83l7.209-7.211c.157-.264.123-.624-.131-.877l-.242-.242c-.227-.227-.557-.3-.811-.115l-7.203 7.205c-1.422 1.423-2.205 3.313-2.205 5.32z"></path>
+          </svg>
+          <input
+            type="text"
+            className="flex-1 bg-white border-none rounded-lg px-4 py-[9px] text-[15px] focus:outline-none placeholder-[#8696a0]"
+            placeholder="Type a message"
+            value={newMessage}
+            onChange={(e) => {
+              setNewMessage(e.target.value);
+              if (e.target.value.trim().length > 0) handleTyping();
+              else stopTyping();
+            }}
+          />
+          {newMessage.trim().length > 0 ? (
+            <button type="submit" className="text-[#54656f] hover:text-[#00a884] p-1 transition-colors shrink-0">
+              <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
+                <path d="M1.101 21.757L23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z"></path>
+              </svg>
+            </button>
+          ) : (
+            <button type="button" className="text-[#54656f] hover:text-[#00a884] p-1 transition-colors shrink-0">
+              <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
+                <path d="M11.999 14.942c2.001 0 3.531-1.53 3.531-3.531V4.35c0-2.001-1.53-3.531-3.531-3.531S8.469 2.35 8.469 4.35v7.061c0 2.001 1.53 3.531 3.53 3.531zm6.238-3.53c0 3.531-2.942 6.002-6.237 6.002s-6.237-2.471-6.237-6.002H3.761c0 4.001 3.178 7.297 7.061 7.885v3.884h2.354v-3.884c3.884-.588 7.061-3.884 7.061-7.885h-2.002z"></path>
+              </svg>
+            </button>
+          )}
+        </form>
+      </div>
     </div>
   );
 };
