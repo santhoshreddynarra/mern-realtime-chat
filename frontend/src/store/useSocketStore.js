@@ -6,15 +6,18 @@ export const useSocketStore = create((set, get) => ({
   onlineUsers: [],
 
   connectSocket: (userId) => {
-    const socket = io('http://localhost:5000', {
-      query: {
-        userId,
-      },
+    const { socket } = get();
+    // Guard: don't create a new socket if one is already connected for this user
+    if (socket && socket.connected) return;
+
+    const newSocket = io('http://localhost:5000', {
+      query: { userId },
+      transports: ['websocket'], // Skip polling to prevent duplicate connection races
     });
 
-    set({ socket });
+    set({ socket: newSocket });
 
-    socket.on('getOnlineUsers', (users) => {
+    newSocket.on('getOnlineUsers', (users) => {
       set({ onlineUsers: users });
     });
   },
@@ -22,8 +25,8 @@ export const useSocketStore = create((set, get) => ({
   disconnectSocket: () => {
     const { socket } = get();
     if (socket) {
-      socket.close();
-      set({ socket: null });
+      socket.disconnect();
+      set({ socket: null, onlineUsers: [] });
     }
   },
 }));

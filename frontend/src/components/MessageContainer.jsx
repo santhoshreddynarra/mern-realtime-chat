@@ -21,7 +21,7 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
   const messagesEndRef = useRef(null);
   const { isTyping, handleTyping, stopTyping } = useTyping(selectedUser);
 
-  useListenMessages(messages, setMessages); 
+  useListenMessages(setMessages);
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -40,7 +40,9 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
   }, [selectedUser]);
 
   useEffect(() => {
-    setIsUserNearBottom(true); // Reset scroll state when changing chats
+    setMessages([]); // Clear messages when switching conversations
+    setIsUserNearBottom(true);
+    setReplyingTo(null);
   }, [selectedUser]);
 
   useEffect(() => {

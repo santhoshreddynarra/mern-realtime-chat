@@ -8,18 +8,28 @@ import { Toaster } from 'react-hot-toast';
 import { useEffect } from 'react';
 import { useAuthStore } from './store/useAuthStore';
 import { useSocketStore } from './store/useSocketStore';
+import { useConversationStore } from './store/useConversationStore';
 
 const App = () => {
   const { authUser } = useAuthStore();
-  const { connectSocket, disconnectSocket } = useSocketStore();
+  const { connectSocket, disconnectSocket, socket } = useSocketStore();
+  const { listenForConversationUpdates, cleanupConversationUpdates } = useConversationStore();
 
   useEffect(() => {
     if (authUser) {
       connectSocket(authUser._id);
     } else {
+      cleanupConversationUpdates();
       disconnectSocket();
     }
-  }, [authUser, connectSocket, disconnectSocket]);
+  }, [authUser, connectSocket, disconnectSocket, cleanupConversationUpdates]);
+
+  // Wire the conversation:update listener once the socket is ready
+  useEffect(() => {
+    if (socket && authUser) {
+      listenForConversationUpdates(socket, authUser._id);
+    }
+  }, [socket, authUser, listenForConversationUpdates]);
 
   return (
     <>

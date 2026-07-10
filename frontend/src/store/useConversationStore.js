@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 export const useConversationStore = create((set, get) => ({
   conversations: [],
   loading: false,
+  _socketListener: null,
 
   fetchConversations: async () => {
     set({ loading: true });
@@ -21,39 +22,60 @@ export const useConversationStore = create((set, get) => ({
   createConversation: async (user) => {
     try {
       await axiosInstance.post('/conversations', { userId: user._id });
-      // We also fetch immediately to ensure it's there
       get().fetchConversations();
     } catch (error) {
       toast.error('Failed to create conversation');
     }
   },
 
-  // Called on conversation:update socket event
-  updateConversation: ({ conversationId, senderId, receiverId, lastMessage, lastMessageAt, isNew }, authUserId) => {
-    const { conversations, fetchConversations } = get();
-    const otherUserId = senderId.toString() === authUserId ? receiverId : senderId;
+  // Wire up the socket listener for conversation:update.
+  // Called once from App.jsx after socket connects.
+  listenForConversationUpdates: (socket, authUserId) => {
+    const { _socketListener } = get();
 
-    const exists = conversations.find((c) => c._id.toString() === otherUserId.toString());
-    
-    if (!exists || isNew) {
-      // If it's a new conversation we don't have in state, just refetch to get populated user data
-      fetchConversations();
-      return;
+    // Clean up any previous listener first (guard against re-registration)
+    if (_socketListener) {
+      _socketListener.socket.off('conversation:update', _socketListener.handler);
     }
 
-    const updated = conversations.map((c) => {
-      if (c._id.toString() === otherUserId.toString()) {
-        return { ...c, lastMessage, lastMessageAt, updatedAt: new Date().toISOString() };
+    const handler = ({ conversationId, senderId, receiverId, lastMessage, lastMessageAt, isNew }) => {
+      const { conversations, fetchConversations } = get();
+      const otherUserId = senderId.toString() === authUserId.toString() ? receiverId.toString() : senderId.toString();
+
+      const existsIdx = conversations.findIndex((c) => c._id.toString() === otherUserId);
+
+      if (existsIdx === -1 || isNew) {
+        // New conversation not yet in local state — refetch
+        fetchConversations();
+        return;
       }
-      return c;
-    });
 
-    updated.sort((a, b) => {
-      const dateA = new Date(a.updatedAt || 0);
-      const dateB = new Date(b.updatedAt || 0);
-      return dateB - dateA;
-    });
+      const updated = conversations.map((c) => {
+        if (c._id.toString() === otherUserId) {
+          return { ...c, lastMessage, lastMessageAt, updatedAt: new Date().toISOString() };
+        }
+        return c;
+      });
 
-    set({ conversations: updated });
+      updated.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
+
+      set({ conversations: updated });
+    };
+
+    socket.on('conversation:update', handler);
+    set({ _socketListener: { socket, handler } });
+  },
+
+  cleanupConversationUpdates: () => {
+    const { _socketListener } = get();
+    if (_socketListener) {
+      _socketListener.socket.off('conversation:update', _socketListener.handler);
+      set({ _socketListener: null });
+    }
+  },
+
+  // Legacy: kept for any residual callers
+  updateConversation: ({ conversationId, senderId, receiverId, lastMessage, lastMessageAt, isNew }, authUserId) => {
+    get().listenForConversationUpdates; // no-op legacy shim
   },
 }));

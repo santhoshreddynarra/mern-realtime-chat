@@ -1,25 +1,29 @@
 import { useEffect } from 'react';
 import { useSocketStore } from '../store/useSocketStore';
 
-const useListenMessages = (messages, setMessages) => {
+const useListenMessages = (setMessages) => {
   const { socket } = useSocketStore();
 
   useEffect(() => {
     if (!socket) return;
 
     const handleNewMessage = (newMessage) => {
-      setMessages((prevMessages) => [...prevMessages, newMessage]);
+      setMessages((prevMessages) => {
+        // Guard: prevent duplicate messages if emitted more than once
+        if (prevMessages.some((m) => m._id === newMessage._id)) return prevMessages;
+        return [...prevMessages, newMessage];
+      });
     };
 
     const handleMessagesRead = ({ readerId }) => {
-      setMessages((prevMessages) => 
-        prevMessages.map((msg) => 
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) =>
           msg.receiverId === readerId ? { ...msg, status: 'read' } : msg
         )
       );
     };
 
-    // When the cron delivers a scheduled message, update the sender's UI from clock → tick
+    // When cron delivers a scheduled message, flip sender's UI: clock → tick
     const handleMessageSent = (sentMessage) => {
       setMessages((prevMessages) =>
         prevMessages.map((msg) =>
