@@ -4,7 +4,7 @@ import { getReceiverSocketId, io } from '../socket/socket.js';
 
 export const sendMessage = async (req, res, next) => {
   try {
-    const { message, replyTo } = req.body;
+    const { message, replyTo, scheduledFor } = req.body;
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
 
@@ -23,11 +23,17 @@ export const sendMessage = async (req, res, next) => {
       receiverId,
       message,
       replyTo: replyTo || null,
+      scheduledFor: scheduledFor ? new Date(scheduledFor) : null,
+      status: scheduledFor ? 'scheduled' : 'sent',
     });
 
     conversation.messages.push(newMessage._id);
-    conversation.lastMessage = message;
-    conversation.lastMessageAt = new Date();
+    
+    // Only update lastMessage immediately if it's not scheduled
+    if (!scheduledFor) {
+      conversation.lastMessage = message;
+      conversation.lastMessageAt = new Date();
+    }
 
     await Promise.all([conversation.save(), newMessage.save()]);
 
@@ -35,27 +41,30 @@ export const sendMessage = async (req, res, next) => {
       await newMessage.populate('replyTo', 'message senderId');
     }
 
-    // Emit new message to receiver
-    const receiverSocketId = getReceiverSocketId(receiverId);
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit('newMessage', newMessage);
-    }
-
-    // Emit conversation update to BOTH participants so their sidebars refresh
-    const convUpdate = {
-      conversationId: conversation._id,
-      senderId,
-      receiverId,
-      lastMessage: message,
-      lastMessageAt: conversation.lastMessageAt,
-    };
-
     const senderSocketId = getReceiverSocketId(senderId.toString());
-    if (senderSocketId) {
-      io.to(senderSocketId).emit('conversation:update', convUpdate);
-    }
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit('conversation:update', convUpdate);
+    const receiverSocketId = getReceiverSocketId(receiverId);
+
+    // If it's scheduled, only emit back to sender so their UI updates
+    if (scheduledFor) {
+      if (senderSocketId) {
+        io.to(senderSocketId).emit('newMessage', newMessage);
+      }
+    } else {
+      // Normal send
+      if (receiverSocketId) {
+        io.to(receiverSocketId).emit('newMessage', newMessage);
+      }
+      
+      const convUpdate = {
+        conversationId: conversation._id,
+        senderId,
+        receiverId,
+        lastMessage: message,
+        lastMessageAt: conversation.lastMessageAt,
+      };
+
+      if (senderSocketId) io.to(senderSocketId).emit('conversation:update', convUpdate);
+      if (receiverSocketId) io.to(receiverSocketId).emit('conversation:update', convUpdate);
     }
 
     res.status(201).json(newMessage);
@@ -78,7 +87,11 @@ export const getMessages = async (req, res, next) => {
 
     if (!conversation) return res.status(200).json([]);
 
-    res.status(200).json(conversation.messages);
+    const filteredMessages = conversation.messages.filter(msg => 
+      msg.status !== 'scheduled' || msg.senderId.toString() === senderId.toString()
+    );
+
+    res.status(200).json(filteredMessages);
   } catch (error) {
     next(error);
   }

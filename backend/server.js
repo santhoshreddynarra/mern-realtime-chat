@@ -10,11 +10,13 @@ import messageRoutes from './routes/messageRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import conversationRoutes from './routes/conversationRoutes.js';
 import { app, server } from './socket/socket.js';
+import startScheduleWorker from './cron/scheduleWorker.js';
 
 dotenv.config();
 const port = process.env.PORT || 5000;
 const __dirname = path.resolve();
 connectDB();
+startScheduleWorker();
 
 app.use(cors({
   origin: 'http://localhost:5173',

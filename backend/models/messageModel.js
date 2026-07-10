@@ -17,12 +17,16 @@ const messageSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['sent', 'read'],
+    enum: ['sent', 'read', 'scheduled'],
     default: 'sent'
   },
   replyTo: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Message',
+    default: null
+  },
+  scheduledFor: {
+    type: Date,
     default: null
   }
 }, { timestamps: true });

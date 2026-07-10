@@ -11,6 +11,8 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [replyingTo, setReplyingTo] = useState(null);
+  const [isScheduling, setIsScheduling] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState('');
   const [loading, setLoading] = useState(false);
   const [isUserNearBottom, setIsUserNearBottom] = useState(true);
   
@@ -66,13 +68,21 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
     setIsUserNearBottom(true); // Force scroll on self-send
 
     try {
-      const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, { 
+      const payload = { 
         message: newMessage,
-        replyTo: replyingTo ? replyingTo._id : null
-      });
+        replyTo: replyingTo ? replyingTo._id : null,
+      };
+
+      if (isScheduling && scheduleDate) {
+        payload.scheduledFor = new Date(scheduleDate).toISOString();
+      }
+
+      const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, payload);
       setMessages([...messages, res.data]);
       setNewMessage('');
       setReplyingTo(null);
+      setIsScheduling(false);
+      setScheduleDate('');
     } catch (error) {
       toast.error('Failed to send message');
     }
@@ -163,7 +173,7 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
                   </button>
                 )}
                 
-                <div className={`relative max-w-[85%] md:max-w-[65%] min-w-0 px-2 py-1 rounded-lg shadow-sm ${isOwn ? 'bg-[#d9fdd3] rounded-tr-none' : 'bg-white rounded-tl-none'}`}>
+                <div className={`relative max-w-[85%] md:max-w-[65%] min-w-0 px-2 py-1 rounded-lg shadow-sm ${isOwn ? 'bg-[#d9fdd3] rounded-tr-none' : 'bg-white rounded-tl-none'} ${msg.status === 'scheduled' ? 'opacity-80 border border-dashed border-[#00a884]' : ''}`}>
                   <div className="flex flex-col relative w-full">
                     
                     {/* Quoted Reply Block */}
@@ -193,7 +203,13 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
                     <div className="absolute bottom-[2px] right-0 flex items-center gap-[2px] text-[11px] text-[#667781] shrink-0">
                       <span className="leading-none pt-1">{time}</span>
                       {isOwn && (
-                        msg.status === 'read' ? (
+                        msg.status === 'scheduled' ? (
+                          <span className="text-gray-400 leading-none pt-1 flex items-center">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                              <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.2 14.2L11 11V6h1.5v4.4l4.5 4.5-.8.9z"></path>
+                            </svg>
+                          </span>
+                        ) : msg.status === 'read' ? (
                           <span className="text-[#53bdeb] font-bold tracking-tighter leading-none pt-1">✓✓</span>
                         ) : (
                           <span className="text-gray-400 leading-none pt-1">✓</span>
@@ -247,6 +263,32 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
           </div>
         )}
 
+        {/* Schedule date/time picker */}
+        {isScheduling && (
+          <div className="bg-[#f0f2f5] px-4 pt-2 pb-0 flex items-center gap-2">
+            <svg viewBox="0 0 24 24" width="18" height="18" className="text-[#00a884] shrink-0" fill="currentColor">
+              <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.2 14.2L11 11V6h1.5v4.4l4.5 4.5-.8.9z"></path>
+            </svg>
+            <input
+              type="datetime-local"
+              className="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-[13px] focus:outline-none text-[#111b21] focus:border-[#00a884] transition-colors"
+              value={scheduleDate}
+              min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
+              onChange={(e) => setScheduleDate(e.target.value)}
+            />
+            <button
+              type="button"
+              onClick={() => { setIsScheduling(false); setScheduleDate(''); }}
+              className="text-[#54656f] hover:text-black transition-colors shrink-0"
+              title="Cancel scheduling"
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                <path d="M19.1 17.7l-1.4 1.4L12 13.4l-5.7 5.7-1.4-1.4L10.6 12 4.9 6.3l1.4-1.4L12 10.6l5.7-5.7 1.4 1.4L13.4 12z"></path>
+              </svg>
+            </button>
+          </div>
+        )}
+
         <form onSubmit={handleSendMessage} className="bg-[#f0f2f5] px-4 py-3 flex items-center gap-3">
           <svg viewBox="0 0 24 24" width="26" height="26" className="text-[#54656f] cursor-pointer shrink-0 hidden md:block" fill="currentColor">
             <path d="M9.153 11.603c.795 0 1.439-.879 1.439-1.962s-.644-1.962-1.439-1.962-1.439.879-1.439 1.962.644 1.962 1.439 1.962zm-3.204 1.362c-.026-.307-.131 5.218 6.063 5.551 6.066-.25 6.066-5.551 6.066-5.551-6.078 1.416-12.129 0-12.129 0zm11.363 1.108s-.669 1.959-5.051 1.959c-3.379 0-4.782-1.685-5.021-1.936l1.241-.45c.168.214 1.25.922 3.78.922 2.41 0 3.651-.837 3.864-1.002l1.187.507zm-2.023-4.432c.795 0 1.439-.879 1.439-1.962s-.644-1.962-1.439-1.962-1.439.879-1.439 1.962.644 1.962 1.439 1.962z"></path>
@@ -265,11 +307,34 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
               else stopTyping();
             }}
           />
+          {/* Schedule toggle button */}
+          <button
+            type="button"
+            onClick={() => setIsScheduling(prev => !prev)}
+            className={`p-1 transition-colors shrink-0 ${isScheduling ? 'text-[#00a884]' : 'text-[#54656f] hover:text-[#00a884]'}`}
+            title={isScheduling ? 'Cancel scheduling' : 'Schedule message'}
+          >
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+              <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.2 14.2L11 11V6h1.5v4.4l4.5 4.5-.8.9z"></path>
+            </svg>
+          </button>
+
           {newMessage.trim().length > 0 ? (
-            <button type="submit" className="text-[#54656f] hover:text-[#00a884] p-1 transition-colors shrink-0">
-              <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
-                <path d="M1.101 21.757L23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z"></path>
-              </svg>
+            <button
+              type="submit"
+              disabled={isScheduling && !scheduleDate}
+              className={`p-1 transition-colors shrink-0 ${isScheduling && !scheduleDate ? 'text-gray-300 cursor-not-allowed' : 'text-[#54656f] hover:text-[#00a884]'}`}
+              title={isScheduling ? 'Send scheduled message' : 'Send'}
+            >
+              {isScheduling ? (
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
+                  <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-7 3l5 3.5L13 14l-5-3.5L13 7zm0 7l-6-4.2V17h12v-7.2L13 14z"></path>
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
+                  <path d="M1.101 21.757L23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z"></path>
+                </svg>
+              )}
             </button>
           ) : (
             <button type="button" className="text-[#54656f] hover:text-[#00a884] p-1 transition-colors shrink-0">
