@@ -10,7 +10,7 @@ export const getUsersForSidebar = async (req, res, next) => {
     const conversations = await Conversation.find({
       participants: loggedInUserId,
     })
-      .sort({ lastMessageAt: -1, updatedAt: -1 })
+      .sort({ updatedAt: -1 })
       .populate('participants', '-password');
 
     // Shape the response: return the "other" participant with conversation meta
@@ -29,6 +29,7 @@ export const getUsersForSidebar = async (req, res, next) => {
         conversationId: conv._id,
         lastMessage: conv.lastMessage,
         lastMessageAt: conv.lastMessageAt,
+        updatedAt: conv.updatedAt,
       };
     });
 

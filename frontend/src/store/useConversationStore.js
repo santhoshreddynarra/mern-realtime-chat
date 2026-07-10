@@ -18,48 +18,39 @@ export const useConversationStore = create((set, get) => ({
     }
   },
 
-  // Called when a user is selected from search results — ensures they appear in sidebar
-  ensureConversation: (user) => {
-    const { conversations } = get();
-    const exists = conversations.find((c) => c._id === user._id);
-    if (!exists) {
-      // Prepend as a "pending" conversation with no lastMessage yet
-      set({
-        conversations: [
-          {
-            _id: user._id,
-            name: user.name,
-            email: user.email,
-            username: user.username,
-            phone: user.phone,
-            profilePic: user.profilePic,
-            about: user.about,
-            lastMessage: '',
-            lastMessageAt: null,
-          },
-          ...conversations,
-        ],
-      });
+  createConversation: async (user) => {
+    try {
+      await axiosInstance.post('/conversations', { userId: user._id });
+      // We also fetch immediately to ensure it's there
+      get().fetchConversations();
+    } catch (error) {
+      toast.error('Failed to create conversation');
     }
   },
 
   // Called on conversation:update socket event
-  updateConversation: ({ conversationId, senderId, receiverId, lastMessage, lastMessageAt }, authUserId) => {
-    const { conversations } = get();
-    // The "other" user in this conversation from our perspective
+  updateConversation: ({ conversationId, senderId, receiverId, lastMessage, lastMessageAt, isNew }, authUserId) => {
+    const { conversations, fetchConversations } = get();
     const otherUserId = senderId.toString() === authUserId ? receiverId : senderId;
+
+    const exists = conversations.find((c) => c._id.toString() === otherUserId.toString());
+    
+    if (!exists || isNew) {
+      // If it's a new conversation we don't have in state, just refetch to get populated user data
+      fetchConversations();
+      return;
+    }
 
     const updated = conversations.map((c) => {
       if (c._id.toString() === otherUserId.toString()) {
-        return { ...c, lastMessage, lastMessageAt };
+        return { ...c, lastMessage, lastMessageAt, updatedAt: new Date().toISOString() };
       }
       return c;
     });
 
-    // Sort by lastMessageAt descending
     updated.sort((a, b) => {
-      const dateA = a.lastMessageAt ? new Date(a.lastMessageAt) : new Date(a.createdAt || 0);
-      const dateB = b.lastMessageAt ? new Date(b.lastMessageAt) : new Date(b.createdAt || 0);
+      const dateA = new Date(a.updatedAt || 0);
+      const dateB = new Date(b.updatedAt || 0);
       return dateB - dateA;
     });
 
