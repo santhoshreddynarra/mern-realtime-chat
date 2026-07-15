@@ -1,6 +1,8 @@
 import { Server } from 'socket.io';
 import http from 'http';
 import express from 'express';
+import Message from '../models/messageModel.js';
+import User from '../models/userModel.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -41,10 +43,22 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('disconnect', () => {
+  socket.on('message:delivered', async ({ messageId, senderId }) => {
+    // Update DB to delivered
+    await Message.findByIdAndUpdate(messageId, { status: 'delivered' });
+    const senderSocketId = getReceiverSocketId(senderId);
+    if (senderSocketId) {
+      io.to(senderSocketId).emit('message:delivered', { messageId });
+    }
+  });
+
+  socket.on('disconnect', async () => {
     console.log('User disconnected:', socket.id);
     if (userId) {
       delete userSocketMap[userId];
+      const lastSeenTime = new Date();
+      await User.findByIdAndUpdate(userId, { lastSeen: lastSeenTime });
+      io.emit('user:offline', { userId, lastSeen: lastSeenTime });
     }
     io.emit('getOnlineUsers', Object.keys(userSocketMap));
   });

@@ -103,7 +103,7 @@ export const markMessagesAsRead = async (req, res, next) => {
     const receiverId = req.user._id;
 
     await Message.updateMany(
-      { senderId, receiverId, status: 'sent' },
+      { senderId, receiverId, status: { $in: ['sent', 'delivered'] } },
       { $set: { status: 'read' } }
     );
 

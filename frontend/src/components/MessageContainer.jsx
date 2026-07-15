@@ -213,6 +213,8 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
                           </span>
                         ) : msg.status === 'read' ? (
                           <span className="text-[#53bdeb] font-bold tracking-tighter leading-none pt-1">✓✓</span>
+                        ) : msg.status === 'delivered' ? (
+                          <span className="text-gray-400 font-bold tracking-tighter leading-none pt-1">✓✓</span>
                         ) : (
                           <span className="text-gray-400 leading-none pt-1">✓</span>
                         )
