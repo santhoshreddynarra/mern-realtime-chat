@@ -49,7 +49,7 @@ const useTyping = (selectedUser) => {
     typingTimeoutRef.current = setTimeout(() => {
       isLocalTypingRef.current = false;
       socket.emit('typing:stop', { receiverId: selectedUser._id });
-    }, 1000);
+    }, 800);
   };
 
   // Manually stop typing (e.g. when sending a message)
