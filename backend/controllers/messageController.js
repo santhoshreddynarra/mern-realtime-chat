@@ -32,6 +32,7 @@ export const sendMessage = async (req, res, next) => {
     // Only update lastMessage immediately if it's not scheduled
     if (!scheduledFor) {
       conversation.lastMessage = message;
+      conversation.lastMessageSenderId = senderId;
       conversation.lastMessageAt = new Date();
     }
 
@@ -60,6 +61,7 @@ export const sendMessage = async (req, res, next) => {
         senderId,
         receiverId,
         lastMessage: message,
+        lastMessageSenderId: senderId,
         lastMessageAt: conversation.lastMessageAt,
       };
 

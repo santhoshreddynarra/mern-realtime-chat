@@ -37,6 +37,7 @@ export const getUsersForSidebar = async (req, res, next) => {
         lastSeen: otherUser.lastSeen,
         conversationId: conv._id,
         lastMessage: conv.lastMessage,
+        lastMessageSenderId: conv.lastMessageSenderId,
         lastMessageAt: conv.lastMessageAt,
         updatedAt: conv.updatedAt,
         unreadCount,

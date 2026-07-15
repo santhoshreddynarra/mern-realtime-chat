@@ -46,7 +46,7 @@ export const useConversationStore = create((set, get) => ({
       _socketListener.socket.off('conversation:update', _socketListener.handler);
     }
 
-    const handler = ({ conversationId, senderId, receiverId, lastMessage, lastMessageAt, isNew }) => {
+    const handler = ({ conversationId, senderId, receiverId, lastMessage, lastMessageSenderId, lastMessageAt, isNew }) => {
       const { conversations, fetchConversations } = get();
       const otherUserId = senderId.toString() === authUserId.toString() ? receiverId.toString() : senderId.toString();
 
@@ -64,7 +64,8 @@ export const useConversationStore = create((set, get) => ({
           const isReceiver = authUserId.toString() === receiverId.toString();
           return { 
             ...c, 
-            lastMessage, 
+            lastMessage,
+            lastMessageSenderId,
             lastMessageAt, 
             updatedAt: new Date().toISOString(),
             unreadCount: isReceiver ? (c.unreadCount || 0) + 1 : c.unreadCount

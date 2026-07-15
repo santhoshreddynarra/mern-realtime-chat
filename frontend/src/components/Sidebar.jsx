@@ -18,7 +18,29 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
   const formatTime = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const now = new Date();
+    
+    // Check if today
+    if (date.toDateString() === now.toDateString()) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    
+    // Check if yesterday
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (date.toDateString() === yesterday.toDateString()) {
+      return 'Yesterday';
+    }
+    
+    // Check if within the last 7 days
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+    if (diffDays <= 7) {
+      return date.toLocaleDateString([], { weekday: 'long' });
+    }
+    
+    // Older messages
+    return date.toLocaleDateString([], { month: 'numeric', day: 'numeric', year: '2-digit' });
   };
 
   return (
@@ -84,7 +106,14 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
                   </div>
                   <div className="flex justify-between items-center">
                     <p className={`text-[14px] truncate leading-tight ${user.lastMessage ? 'text-[#667781]' : 'text-gray-400 italic'}`}>
-                      {user.lastMessage || 'No messages yet'}
+                      {user.lastMessage ? (
+                        <>
+                          {user.lastMessageSenderId === authUser?._id && <span>You: </span>}
+                          {user.lastMessage}
+                        </>
+                      ) : (
+                        'Start chatting...'
+                      )}
                     </p>
                     {user.unreadCount > 0 && (
                       <div className="bg-[#25d366] text-white text-[11px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">{user.unreadCount}</div>
