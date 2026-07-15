@@ -4,6 +4,7 @@ import { io } from 'socket.io-client';
 export const useSocketStore = create((set, get) => ({
   socket: null,
   onlineUsers: [],
+  offlineUsers: {},
 
   connectSocket: (userId) => {
     const { socket } = get();
@@ -19,6 +20,12 @@ export const useSocketStore = create((set, get) => ({
 
     newSocket.on('getOnlineUsers', (users) => {
       set({ onlineUsers: users });
+    });
+
+    newSocket.on('user:offline', ({ userId, lastSeen }) => {
+      set((state) => ({
+        offlineUsers: { ...state.offlineUsers, [userId]: lastSeen }
+      }));
     });
   },
 

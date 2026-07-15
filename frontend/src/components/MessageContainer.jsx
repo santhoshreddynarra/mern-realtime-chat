@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import axiosInstance from '../api/axiosInstance';
 import { useAuthStore } from '../store/useAuthStore';
 import { useConversationStore } from '../store/useConversationStore';
+import { useSocketStore } from '../store/useSocketStore';
 import toast from 'react-hot-toast';
 import useListenMessages from '../hooks/useListenMessages';
 import useTyping from '../hooks/useTyping';
@@ -20,6 +21,7 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
   const { conversations } = useConversationStore();
   const messagesEndRef = useRef(null);
   const { isTyping, handleTyping, stopTyping } = useTyping(selectedUser);
+  const { onlineUsers, offlineUsers } = useSocketStore();
 
   useListenMessages(setMessages);
 
@@ -134,7 +136,7 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
           <div className="flex flex-col">
             <span className="font-normal text-[16px] text-[#111b21] leading-tight">{selectedUser.name}</span>
             <span className={`text-[13px] ${isTyping ? 'text-[#00a884]' : 'text-[#667781]'} h-4`}>
-              {isTyping ? 'typing...' : 'click here for contact info'}
+              {isTyping ? 'typing...' : onlineUsers.includes(selectedUser._id) ? 'online' : (offlineUsers[selectedUser._id] || selectedUser.lastSeen) ? `last seen ${new Date(offlineUsers[selectedUser._id] || selectedUser.lastSeen).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}` : 'offline'}
             </span>
           </div>
         </div>
