@@ -240,6 +240,22 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
         <div ref={messagesEndRef} className="h-2" />
       </div>
 
+      {/* Scroll to bottom button */}
+      {!isUserNearBottom && (
+        <button
+          onClick={() => {
+            setIsUserNearBottom(true);
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+          }}
+          className="absolute right-4 bottom-[80px] bg-white text-[#54656f] p-2 rounded-full shadow-lg hover:bg-[#f0f2f5] transition-colors z-20 border border-gray-200"
+          title="Scroll to bottom"
+        >
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+            <path d="M12 17.5l-6-6 1.4-1.4 4.6 4.6 4.6-4.6 1.4 1.4z"></path>
+          </svg>
+        </button>
+      )}
+
       {/* Input Area */}
       <div className="flex flex-col z-10 shrink-0 border-l border-gray-200">
         
