@@ -28,6 +28,14 @@ export const useConversationStore = create((set, get) => ({
     }
   },
 
+  resetUnreadCount: (userId) => {
+    set((state) => ({
+      conversations: state.conversations.map((c) => 
+        c._id.toString() === userId.toString() ? { ...c, unreadCount: 0 } : c
+      )
+    }));
+  },
+
   // Wire up the socket listener for conversation:update.
   // Called once from App.jsx after socket connects.
   listenForConversationUpdates: (socket, authUserId) => {
@@ -52,7 +60,15 @@ export const useConversationStore = create((set, get) => ({
 
       const updated = conversations.map((c) => {
         if (c._id.toString() === otherUserId) {
-          return { ...c, lastMessage, lastMessageAt, updatedAt: new Date().toISOString() };
+          // Increment unreadCount if we are the receiver and this is a new message update
+          const isReceiver = authUserId.toString() === receiverId.toString();
+          return { 
+            ...c, 
+            lastMessage, 
+            lastMessageAt, 
+            updatedAt: new Date().toISOString(),
+            unreadCount: isReceiver ? (c.unreadCount || 0) + 1 : c.unreadCount
+          };
         }
         return c;
       });

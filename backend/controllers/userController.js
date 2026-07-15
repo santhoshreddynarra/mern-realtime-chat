@@ -1,5 +1,6 @@
 import User from '../models/userModel.js';
 import Conversation from '../models/conversationModel.js';
+import Message from '../models/messageModel.js';
 
 // GET /api/users  — sidebar: conversations sorted by latest activity
 export const getUsersForSidebar = async (req, res, next) => {
@@ -14,10 +15,17 @@ export const getUsersForSidebar = async (req, res, next) => {
       .populate('participants', '-password');
 
     // Shape the response: return the "other" participant with conversation meta
-    const result = conversations.map((conv) => {
+    const result = await Promise.all(conversations.map(async (conv) => {
       const otherUser = conv.participants.find(
         (p) => p._id.toString() !== loggedInUserId.toString()
       );
+      
+      const unreadCount = await Message.countDocuments({
+        senderId: otherUser._id,
+        receiverId: loggedInUserId,
+        status: { $ne: 'read' }
+      });
+
       return {
         _id: otherUser._id,
         name: otherUser.name,
@@ -26,12 +34,14 @@ export const getUsersForSidebar = async (req, res, next) => {
         phone: otherUser.phone,
         profilePic: otherUser.profilePic,
         about: otherUser.about,
+        lastSeen: otherUser.lastSeen,
         conversationId: conv._id,
         lastMessage: conv.lastMessage,
         lastMessageAt: conv.lastMessageAt,
         updatedAt: conv.updatedAt,
+        unreadCount,
       };
-    });
+    }));
 
     res.status(200).json(result);
   } catch (error) {

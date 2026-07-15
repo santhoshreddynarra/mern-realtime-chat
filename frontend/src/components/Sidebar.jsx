@@ -86,8 +86,9 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
                     <p className={`text-[14px] truncate leading-tight ${user.lastMessage ? 'text-[#667781]' : 'text-gray-400 italic'}`}>
                       {user.lastMessage || 'No messages yet'}
                     </p>
-                    {/* Placeholder for unread count if we add it later */}
-                    {/* <div className="bg-[#25d366] text-white text-[11px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">1</div> */}
+                    {user.unreadCount > 0 && (
+                      <div className="bg-[#25d366] text-white text-[11px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">{user.unreadCount}</div>
+                    )}
                   </div>
                 </div>
               </div>

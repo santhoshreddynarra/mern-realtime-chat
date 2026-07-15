@@ -45,6 +45,9 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
     setMessages([]); // Clear messages when switching conversations
     setIsUserNearBottom(true);
     setReplyingTo(null);
+    if (selectedUser) {
+      useConversationStore.getState().resetUnreadCount(selectedUser._id);
+    }
   }, [selectedUser]);
 
   useEffect(() => {
