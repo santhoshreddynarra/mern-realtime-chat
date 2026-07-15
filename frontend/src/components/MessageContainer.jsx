@@ -181,7 +181,7 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
                 )}
                 
                 <div className={`relative max-w-[85%] md:max-w-[65%] min-w-0 px-2 py-1 rounded-lg shadow-sm ${isOwn ? 'bg-[#d9fdd3] rounded-tr-none' : 'bg-white rounded-tl-none'} ${msg.status === 'scheduled' ? 'opacity-80 border border-dashed border-[#00a884]' : ''}`}>
-                  <div className="flex flex-col relative w-full">
+                  <div className="flex flex-col w-full">
                     
                     {/* Quoted Reply Block */}
                     {msg.replyTo && (
@@ -200,30 +200,32 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
                       </div>
                     )}
 
-                    <span 
-                      className="text-[14.2px] text-[#111b21] break-words whitespace-pre-wrap pr-[50px] leading-[19px] py-1"
-                      style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
-                      id={`msg-${msg._id}`}
-                    >
-                      {msg.message}
-                    </span>
-                    <div className="absolute bottom-[2px] right-0 flex items-center gap-[2px] text-[11px] text-[#667781] shrink-0">
-                      <span className="leading-none pt-1">{time}</span>
-                      {isOwn && (
-                        msg.status === 'scheduled' ? (
-                          <span className="text-gray-400 leading-none pt-1 flex items-center">
-                            <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
-                              <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.2 14.2L11 11V6h1.5v4.4l4.5 4.5-.8.9z"></path>
-                            </svg>
-                          </span>
-                        ) : msg.status === 'read' ? (
-                          <span className="text-[#53bdeb] font-bold tracking-tighter leading-none pt-1">✓✓</span>
-                        ) : msg.status === 'delivered' ? (
-                          <span className="text-gray-400 font-bold tracking-tighter leading-none pt-1">✓✓</span>
-                        ) : (
-                          <span className="text-gray-400 leading-none pt-1">✓</span>
-                        )
-                      )}
+                    <div className="flex flex-wrap items-end justify-between mt-[2px]">
+                      <span 
+                        className="text-[14.2px] text-[#111b21] break-words whitespace-pre-wrap leading-[19px] max-w-full"
+                        style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
+                        id={`msg-${msg._id}`}
+                      >
+                        {msg.message}
+                      </span>
+                      <div className="flex items-center gap-[2px] text-[11px] text-[#667781] shrink-0 ml-auto pl-3 pb-[1px]">
+                        <span className="leading-none pt-[2px]">{time}</span>
+                        {isOwn && (
+                          msg.status === 'scheduled' ? (
+                            <span className="text-gray-400 leading-none pt-[2px] flex items-center">
+                              <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.2 14.2L11 11V6h1.5v4.4l4.5 4.5-.8.9z"></path>
+                              </svg>
+                            </span>
+                          ) : msg.status === 'read' ? (
+                            <span className="text-[#53bdeb] font-bold tracking-tighter leading-none pt-[2px]">✓✓</span>
+                          ) : msg.status === 'delivered' ? (
+                            <span className="text-gray-400 font-bold tracking-tighter leading-none pt-[2px]">✓✓</span>
+                          ) : (
+                            <span className="text-gray-400 leading-none pt-[2px]">✓</span>
+                          )
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
