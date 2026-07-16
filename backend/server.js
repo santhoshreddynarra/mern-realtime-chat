@@ -15,37 +15,63 @@ import startScheduleWorker from './cron/scheduleWorker.js';
 dotenv.config();
 const port = process.env.PORT || 5000;
 const __dirname = path.resolve();
+
+// Connect to MongoDB
 connectDB();
+
+// Start scheduled jobs
 startScheduleWorker();
 
+// CORS Configuration - Supports dynamic frontend URLs for production (Vercel/Render)
 app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Body parsing middleware
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
 
+
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "MERN Chat API is running 🚀"
+  });
+});
+
+app.get("/api/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Server is healthy"
+  });
+});
+
+
+
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/conversations', conversationRoutes);
 
+// Production Deployment Configuration
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
   app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend', 'dist', 'index.html'));
   });
-} else {
-  app.get('/api/health', (req, res) => {
-    res.status(200).json({ status: 'success', message: 'Server is healthy' });
-  });
 }
 
+// Error Handling Middleware
 app.use(notFound);
 app.use(errorHandler);
 
+// Start Server
 server.listen(port, () => {
-  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${port}`);
+  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${port}`);
 });
