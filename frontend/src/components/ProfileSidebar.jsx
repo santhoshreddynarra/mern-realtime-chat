@@ -51,7 +51,7 @@ const ProfileSidebar = ({ isOpen, onClose }) => {
             {authUser?.profilePic ? (
               <img src={authUser.profilePic} alt="Profile" className="w-full h-full object-cover" />
             ) : (
-              <span className="text-6xl text-blue-600 font-bold">{name.charAt(0).toUpperCase()}</span>
+              <span className="text-6xl text-blue-600 font-bold">{name?.charAt(0)?.toUpperCase() || ''}</span>
             )}
             <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
               <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" className="mb-2">

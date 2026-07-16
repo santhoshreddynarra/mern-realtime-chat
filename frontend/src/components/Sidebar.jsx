@@ -100,7 +100,7 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
       {/* Header */}
       <div className="bg-[#f0f2f5] p-3 flex items-center justify-between shrink-0 h-16 border-r border-gray-200">
         <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold overflow-hidden cursor-pointer" title={authUser?.name}>
-          {authUser?.name?.charAt(0).toUpperCase()}
+          {authUser?.name?.charAt(0)?.toUpperCase() || ''}
         </div>
         <div className="flex gap-4 text-[#54656f]">
           <div ref={filterMenuRef} className="relative">
@@ -170,7 +170,7 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
               >
                 <div className="relative mr-3 shrink-0 py-3">
                   <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-lg">
-                    {user.name.charAt(0).toUpperCase()}
+                    {user.name?.charAt(0)?.toUpperCase() || ''}
                   </div>
                   {isOnline && (
                     <div className="absolute bottom-3 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>

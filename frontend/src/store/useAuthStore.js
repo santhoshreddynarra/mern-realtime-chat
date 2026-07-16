@@ -5,6 +5,11 @@ import toast from 'react-hot-toast';
 export const useAuthStore = create((set) => ({
   authUser: JSON.parse(localStorage.getItem('chat-user')) || null,
 
+  setAuthUser: (user) => {
+    localStorage.setItem('chat-user', JSON.stringify(user));
+    set({ authUser: user });
+  },
+
   signup: async (data) => {
     try {
       const res = await axiosInstance.post('/auth/register', data);

@@ -91,7 +91,7 @@ const NewChatSidebar = ({ isOpen, onClose, setSelectedUser }) => {
               >
                 <div className="relative mr-3 shrink-0 py-3">
                   <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-lg">
-                    {user.name.charAt(0).toUpperCase()}
+                    {user.name?.charAt(0)?.toUpperCase() || ''}
                   </div>
                   {isOnline && (
                     <div className="absolute bottom-3 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>

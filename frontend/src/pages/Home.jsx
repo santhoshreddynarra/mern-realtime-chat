@@ -8,8 +8,6 @@ const Home = () => {
   const [health, setHealth] = useState('Checking server...');
   const { authUser } = useAuthStore();
 
-  if (authUser) return <Navigate to="/chat" />;
-
   useEffect(() => {
     const checkHealth = async () => {
       try {
@@ -21,6 +19,8 @@ const Home = () => {
     };
     checkHealth();
   }, []);
+
+  if (authUser) return <Navigate to="/chat" />;
 
   return (
     <div className="flex flex-col items-center justify-center h-full mt-20">
