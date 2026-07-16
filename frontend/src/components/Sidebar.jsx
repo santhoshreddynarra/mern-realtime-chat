@@ -1,16 +1,52 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSocketStore } from '../store/useSocketStore';
 import { useAuthStore } from '../store/useAuthStore';
-import { useConversationStore } from '../store/useConversationStore';
 import Spinner from './Spinner';
 import NewChatSidebar from './NewChatSidebar';
+import ProfileSidebar from './ProfileSidebar';
+import SettingsSidebar from './SettingsSidebar';
+import axiosInstance from '../api/axiosInstance';
+import toast from 'react-hot-toast';
 
 const Sidebar = ({ selectedUser, setSelectedUser }) => {
   const [isNewChatOpen, setIsNewChatOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const [chatFilter, setChatFilter] = useState('all'); // all, unread, online, archived
   const [searchQuery, setSearchQuery] = useState('');
+  
+  const filterMenuRef = useRef(null);
+  const moreMenuRef = useRef(null);
+
   const { onlineUsers } = useSocketStore();
-  const { authUser } = useAuthStore();
+  const { authUser, setAuthUser } = useAuthStore();
   const { conversations, loading, fetchConversations } = useConversationStore();
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (filterMenuRef.current && !filterMenuRef.current.contains(event.target)) {
+        setIsFilterMenuOpen(false);
+      }
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target)) {
+        setIsMoreMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await axiosInstance.post('/auth/logout');
+      useSocketStore.getState().disconnectSocket();
+      useConversationStore.getState().conversations = [];
+      setAuthUser(null);
+    } catch (error) {
+      toast.error('Logout failed');
+    }
+  };
 
   useEffect(() => {
     fetchConversations();
@@ -18,6 +54,13 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
 
   const filteredConversations = conversations.filter(user => {
     if (user._id === authUser?._id) return false; // Exclude current user
+    
+    // Apply type filter
+    if (chatFilter === 'unread' && (!user.unreadCount || user.unreadCount === 0)) return false;
+    if (chatFilter === 'online' && !onlineUsers.includes(user._id)) return false;
+    if (chatFilter === 'archived') return false; // placeholder
+
+    // Apply text search
     if (!searchQuery) return true;
     const term = searchQuery.toLowerCase();
     return user.name?.toLowerCase().includes(term) || user.username?.toLowerCase().includes(term);
@@ -59,15 +102,37 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
           {authUser?.name?.charAt(0).toUpperCase()}
         </div>
         <div className="flex gap-4 text-[#54656f]">
-          <svg viewBox="0 0 24 24" width="24" height="24" className="cursor-pointer" fill="currentColor">
-            <path d="M12 20.664a9.163 9.163 0 0 1-6.521-2.702.977.977 0 0 1 1.381-1.381 7.269 7.269 0 0 0 10.024.244.977.977 0 0 1 1.313 1.445A9.192 9.192 0 0 1 12 20.664zm7.965-3.092a.977.977 0 0 1-.962-1.156A7.472 7.472 0 1 0 5.038 16.41a.977.977 0 0 1-1.156.962A9.418 9.418 0 1 1 19.965 17.57z"></path>
-          </svg>
+          <div ref={filterMenuRef} className="relative">
+            <svg onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)} viewBox="0 0 24 24" width="24" height="24" className={`cursor-pointer hover:text-black transition-colors ${isFilterMenuOpen || chatFilter !== 'all' ? 'text-black bg-black/5 rounded-full' : ''}`} fill="currentColor">
+              <path d="M12 20.664a9.163 9.163 0 0 1-6.521-2.702.977.977 0 0 1 1.381-1.381 7.269 7.269 0 0 0 10.024.244.977.977 0 0 1 1.313 1.445A9.192 9.192 0 0 1 12 20.664zm7.965-3.092a.977.977 0 0 1-.962-1.156A7.472 7.472 0 1 0 5.038 16.41a.977.977 0 0 1-1.156.962A9.418 9.418 0 1 1 19.965 17.57z"></path>
+            </svg>
+            {isFilterMenuOpen && (
+              <div className="absolute left-0 top-10 w-48 bg-white shadow-[0_2px_5px_0_rgba(11,20,26,.26),0_2px_10px_0_rgba(11,20,26,.16)] rounded-[3px] py-2 z-50 animate-fade-in text-[#3b4a54] text-[14.5px]">
+                <button onClick={() => { setChatFilter('all'); setIsFilterMenuOpen(false); }} className={`w-full text-left px-6 py-3 hover:bg-[#f5f6f6] transition-colors ${chatFilter === 'all' ? 'font-medium text-[#00a884]' : ''}`}>All Chats</button>
+                <button onClick={() => { setChatFilter('unread'); setIsFilterMenuOpen(false); }} className={`w-full text-left px-6 py-3 hover:bg-[#f5f6f6] transition-colors ${chatFilter === 'unread' ? 'font-medium text-[#00a884]' : ''}`}>Unread Chats</button>
+                <button onClick={() => { setChatFilter('online'); setIsFilterMenuOpen(false); }} className={`w-full text-left px-6 py-3 hover:bg-[#f5f6f6] transition-colors ${chatFilter === 'online' ? 'font-medium text-[#00a884]' : ''}`}>Online Users</button>
+                <button onClick={() => { setChatFilter('archived'); setIsFilterMenuOpen(false); toast.success('Archived feature coming soon'); }} className={`w-full text-left px-6 py-3 hover:bg-[#f5f6f6] transition-colors ${chatFilter === 'archived' ? 'font-medium text-[#00a884]' : ''}`}>Archived</button>
+              </div>
+            )}
+          </div>
+          
           <svg onClick={() => setIsNewChatOpen(true)} viewBox="0 0 24 24" width="24" height="24" className="cursor-pointer hover:text-black transition-colors" fill="currentColor">
             <path d="M19.005 3.175H4.674C3.642 3.175 3 3.789 3 4.821V21.02l3.544-3.514h12.461c1.033 0 2.064-1.06 2.064-2.093V4.821c-.001-1.032-1.032-1.646-2.064-1.646zm-4.989 9.869H7.041V11.1h6.975v1.944zm3-4H7.041V7.1h9.975v1.944z"></path>
           </svg>
-          <svg viewBox="0 0 24 24" width="24" height="24" className="cursor-pointer" fill="currentColor">
-            <path d="M12 7a2 2 0 1 0-.001-4.001A2 2 0 0 0 12 7zm0 2a2 2 0 1 0-.001 3.999A2 2 0 0 0 12 9zm0 6a2 2 0 1 0-.001 3.999A2 2 0 0 0 12 15z"></path>
-          </svg>
+
+          <div ref={moreMenuRef} className="relative">
+            <svg onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)} viewBox="0 0 24 24" width="24" height="24" className={`cursor-pointer hover:text-black transition-colors ${isMoreMenuOpen ? 'text-black bg-black/5 rounded-full' : ''}`} fill="currentColor">
+              <path d="M12 7a2 2 0 1 0-.001-4.001A2 2 0 0 0 12 7zm0 2a2 2 0 1 0-.001 3.999A2 2 0 0 0 12 9zm0 6a2 2 0 1 0-.001 3.999A2 2 0 0 0 12 15z"></path>
+            </svg>
+            {isMoreMenuOpen && (
+              <div className="absolute right-0 top-10 w-48 bg-white shadow-[0_2px_5px_0_rgba(11,20,26,.26),0_2px_10px_0_rgba(11,20,26,.16)] rounded-[3px] py-2 z-50 animate-fade-in text-[#3b4a54] text-[14.5px]">
+                <button onClick={() => { setIsProfileOpen(true); setIsMoreMenuOpen(false); }} className="w-full text-left px-6 py-3 hover:bg-[#f5f6f6] transition-colors">Profile</button>
+                <button onClick={() => { setIsSettingsOpen(true); setIsMoreMenuOpen(false); }} className="w-full text-left px-6 py-3 hover:bg-[#f5f6f6] transition-colors">Settings</button>
+                <button onClick={() => { toast('This feature will be added in a future update', { icon: 'ℹ️' }); setIsMoreMenuOpen(false); }} className="w-full text-left px-6 py-3 hover:bg-[#f5f6f6] transition-colors">New Group</button>
+                <button onClick={handleLogout} className="w-full text-left px-6 py-3 hover:bg-[#f5f6f6] transition-colors text-red-600">Logout</button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -145,6 +210,18 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
         isOpen={isNewChatOpen} 
         onClose={() => setIsNewChatOpen(false)} 
         setSelectedUser={setSelectedUser}
+      />
+      
+      {/* Slide-over Profile Panel */}
+      <ProfileSidebar 
+        isOpen={isProfileOpen} 
+        onClose={() => setIsProfileOpen(false)} 
+      />
+
+      {/* Slide-over Settings Panel */}
+      <SettingsSidebar 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
       />
     </div>
   );

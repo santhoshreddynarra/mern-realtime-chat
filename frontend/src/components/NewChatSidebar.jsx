@@ -3,12 +3,14 @@ import axiosInstance from '../api/axiosInstance';
 import toast from 'react-hot-toast';
 import Spinner from './Spinner';
 import { useConversationStore } from '../store/useConversationStore';
+import { useSocketStore } from '../store/useSocketStore';
 
 const NewChatSidebar = ({ isOpen, onClose, setSelectedUser }) => {
   const [search, setSearch] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const { createConversation } = useConversationStore();
+  const { onlineUsers, offlineUsers } = useSocketStore();
 
   const debounceTimeout = useRef(null);
 
@@ -79,27 +81,35 @@ const NewChatSidebar = ({ isOpen, onClose, setSelectedUser }) => {
         ) : search.length > 0 && results.length === 0 ? (
           <div className="text-center text-[#667781] p-6 text-sm">No contacts found</div>
         ) : (
-          results.map((user) => (
-            <div 
-              key={user._id} 
-              onClick={() => handleUserSelect(user)}
-              className="flex items-center px-3 cursor-pointer hover:bg-[#f5f6f6] transition-colors group"
-            >
-              <div className="relative mr-3 shrink-0 py-3">
-                <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-lg">
-                  {user.name.charAt(0).toUpperCase()}
+          results.map((user) => {
+            const isOnline = onlineUsers.includes(user._id);
+            return (
+              <div 
+                key={user._id} 
+                onClick={() => handleUserSelect(user)}
+                className="flex items-center px-3 cursor-pointer hover:bg-[#f5f6f6] transition-colors group"
+              >
+                <div className="relative mr-3 shrink-0 py-3">
+                  <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-lg">
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                  {isOnline && (
+                    <div className="absolute bottom-3 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                  )}
+                </div>
+                
+                <div className="flex-1 min-w-0 border-b border-gray-100 h-full py-3 pr-2 flex flex-col justify-center">
+                  <h2 className="font-normal text-[17px] text-[#111b21] truncate">{user.name}</h2>
+                  <div className="flex text-[13px] text-[#667781] gap-2 mt-0.5">
+                    <span className={`truncate max-w-[50%] ${isOnline ? 'text-[#00a884]' : ''}`}>
+                      {isOnline ? 'Online' : (offlineUsers[user._id] || user.lastSeen) ? `Last seen ${new Date(offlineUsers[user._id] || user.lastSeen).toLocaleDateString()}` : `@${user.username || 'user'}`}
+                    </span>
+                    {user.phone && !isOnline && !(offlineUsers[user._id] || user.lastSeen) && <span className="truncate">{user.phone}</span>}
+                  </div>
                 </div>
               </div>
-              
-              <div className="flex-1 min-w-0 border-b border-gray-100 h-full py-3 pr-2 flex flex-col justify-center">
-                <h2 className="font-normal text-[17px] text-[#111b21] truncate">{user.name}</h2>
-                <div className="flex text-[13px] text-[#667781] gap-2 mt-0.5">
-                  <span className="truncate max-w-[50%]">@{user.username || 'user'}</span>
-                  {user.phone && <span className="truncate">{user.phone}</span>}
-                </div>
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

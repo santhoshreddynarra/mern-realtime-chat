@@ -79,3 +79,30 @@ export const searchUsers = async (req, res, next) => {
     next(error);
   }
 };
+
+// PUT /api/users/profile — update profile
+export const updateProfile = async (req, res, next) => {
+  try {
+    const { name, about } = req.body;
+    const userId = req.user._id;
+
+    if (!name || name.trim() === '') {
+      return res.status(400).json({ message: "Name is required" });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { 
+        $set: { 
+          name: name.trim(), 
+          about: about ? about.trim() : 'Hey there! I am using MERN Chat.' 
+        } 
+      },
+      { new: true }
+    ).select('-password');
+
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    next(error);
+  }
+};
