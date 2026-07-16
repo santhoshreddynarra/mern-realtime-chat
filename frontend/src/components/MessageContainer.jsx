@@ -28,7 +28,7 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
   const { isTyping, handleTyping, stopTyping } = useTyping(selectedUser);
   const { onlineUsers, offlineUsers } = useSocketStore();
 
-  useListenMessages(setMessages);
+  useListenMessages(setMessages, selectedUser);
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -117,7 +117,7 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
       }
 
       const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, payload);
-      setMessages([...messages, res.data]);
+      setMessages((prev) => [...prev, res.data]);
       setNewMessage('');
       removeImage();
       setReplyingTo(null);

@@ -7,6 +7,7 @@ import NewChatSidebar from './NewChatSidebar';
 
 const Sidebar = ({ selectedUser, setSelectedUser }) => {
   const [isNewChatOpen, setIsNewChatOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { onlineUsers } = useSocketStore();
   const { authUser } = useAuthStore();
   const { conversations, loading, fetchConversations } = useConversationStore();
@@ -14,6 +15,13 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
   useEffect(() => {
     fetchConversations();
   }, [fetchConversations]);
+
+  const filteredConversations = conversations.filter(user => {
+    if (user._id === authUser?._id) return false; // Exclude current user
+    if (!searchQuery) return true;
+    const term = searchQuery.toLowerCase();
+    return user.name?.toLowerCase().includes(term) || user.username?.toLowerCase().includes(term);
+  });
 
   const formatTime = (dateString) => {
     if (!dateString) return '';
@@ -69,7 +77,13 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
           <svg viewBox="0 0 24 24" width="20" height="20" className="text-[#54656f] mr-3" fill="currentColor">
             <path d="M15.009 13.805h-.636l-.22-.219a5.184 5.184 0 0 0 1.256-3.386 5.207 5.207 0 1 0-5.207 5.208 5.183 5.183 0 0 0 3.385-1.255l.221.22v.635l4.004 3.999 1.194-1.195-3.997-4.007zm-4.808 0a3.605 3.605 0 1 1 0-7.21 3.605 3.605 0 0 1 0 7.21z"></path>
           </svg>
-          <input type="text" placeholder="Search or start new chat" className="bg-transparent border-none focus:outline-none w-full text-[15px] placeholder-[#8696a0]" />
+          <input 
+            type="text" 
+            placeholder="Search or start new chat" 
+            className="bg-transparent border-none focus:outline-none w-full text-[15px] placeholder-[#8696a0]"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
       </div>
 
@@ -78,7 +92,7 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
         {loading ? (
           <Spinner />
         ) : (
-          conversations.map((user) => {
+          filteredConversations.map((user) => {
             const isOnline = onlineUsers.includes(user._id);
             const isSelected = selectedUser?._id === user._id;
 

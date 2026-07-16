@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useSocketStore } from '../store/useSocketStore';
 import { useAuthStore } from '../store/useAuthStore';
 
-const useListenMessages = (setMessages) => {
+const useListenMessages = (setMessages, selectedUser) => {
   const { socket } = useSocketStore();
   const { authUser } = useAuthStore();
 
@@ -15,6 +15,14 @@ const useListenMessages = (setMessages) => {
         socket.emit('message:delivered', { messageId: newMessage._id, senderId: newMessage.senderId });
       }
       
+      if (!selectedUser) return;
+      
+      const isMessageForCurrentChat = 
+        newMessage.senderId === selectedUser._id || 
+        newMessage.receiverId === selectedUser._id;
+        
+      if (!isMessageForCurrentChat) return;
+
       setMessages((prevMessages) => {
         // Guard: prevent duplicate messages if emitted more than once
         if (prevMessages.some((m) => m._id === newMessage._id)) return prevMessages;
