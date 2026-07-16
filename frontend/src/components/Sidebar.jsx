@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useSocketStore } from '../store/useSocketStore';
 import { useAuthStore } from '../store/useAuthStore';
+import { useConversationStore } from '../store/useConversationStore';
 import Spinner from './Spinner';
 import NewChatSidebar from './NewChatSidebar';
 import ProfileSidebar from './ProfileSidebar';
