@@ -2,10 +2,12 @@ import Conversation from '../models/conversationModel.js';
 import Message from '../models/messageModel.js';
 import { getReceiverSocketId, io } from '../socket/socket.js';
 import cloudinary from '../config/cloudinary.js';
+import fs from 'fs';
 
 export const sendMessage = async (req, res, next) => {
   try {
-    const { message, replyTo, scheduledFor, image } = req.body;
+    const { message, replyTo, scheduledFor } = req.body;
+    const imagePath = req.file?.path;
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
 
@@ -20,11 +22,13 @@ export const sendMessage = async (req, res, next) => {
     }
 
     let imageUrl = "";
-    if (image) {
-      const uploadResponse = await cloudinary.uploader.upload(image, {
+    if (imagePath) {
+      const uploadResponse = await cloudinary.uploader.upload(imagePath, {
         folder: "chat_app",
       });
       imageUrl = uploadResponse.secure_url;
+      // Clean up temp file
+      fs.unlinkSync(imagePath);
     }
 
     let newMessage = new Message({
@@ -81,6 +85,13 @@ export const sendMessage = async (req, res, next) => {
 
     res.status(201).json(newMessage);
   } catch (error) {
+    if (req.file?.path) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (cleanupError) {
+        console.error("Failed to clean up file on error:", cleanupError);
+      }
+    }
     next(error);
   }
 };

@@ -18,6 +18,7 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
   const [isUserNearBottom, setIsUserNearBottom] = useState(true);
   const [imagePreview, setImagePreview] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
   const [isSending, setIsSending] = useState(false);
   const [fullScreenImage, setFullScreenImage] = useState(null);
   const fileInputRef = useRef(null);
@@ -71,12 +72,14 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
     reader.onload = () => {
       setImagePreview(reader.result);
       setSelectedImage(reader.result);
+      setSelectedImageFile(file);
     };
   };
 
   const removeImage = () => {
     setImagePreview(null);
     setSelectedImage(null);
+    setSelectedImageFile(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -106,17 +109,19 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
     setIsSending(true);
 
     try {
-      const payload = { 
-        message: newMessage,
-        image: selectedImage,
-        replyTo: replyingTo ? replyingTo._id : null,
-      };
-
+      const formData = new FormData();
+      formData.append('message', newMessage);
+      if (selectedImageFile) {
+        formData.append('image', selectedImageFile);
+      }
+      if (replyingTo) {
+        formData.append('replyTo', replyingTo._id);
+      }
       if (isScheduling && scheduleDate) {
-        payload.scheduledFor = new Date(scheduleDate).toISOString();
+        formData.append('scheduledFor', new Date(scheduleDate).toISOString());
       }
 
-      const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, payload);
+      const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, formData);
       setMessages((prev) => [...prev, res.data]);
       setNewMessage('');
       removeImage();
