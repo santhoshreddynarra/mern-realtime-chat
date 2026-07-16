@@ -1,10 +1,11 @@
 import Conversation from '../models/conversationModel.js';
 import Message from '../models/messageModel.js';
 import { getReceiverSocketId, io } from '../socket/socket.js';
+import cloudinary from '../config/cloudinary.js';
 
 export const sendMessage = async (req, res, next) => {
   try {
-    const { message, replyTo, scheduledFor } = req.body;
+    const { message, replyTo, scheduledFor, image } = req.body;
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
 
@@ -18,10 +19,19 @@ export const sendMessage = async (req, res, next) => {
       });
     }
 
+    let imageUrl = "";
+    if (image) {
+      const uploadResponse = await cloudinary.uploader.upload(image, {
+        folder: "chat_app",
+      });
+      imageUrl = uploadResponse.secure_url;
+    }
+
     let newMessage = new Message({
       senderId,
       receiverId,
-      message,
+      message: message || "",
+      image: imageUrl,
       replyTo: replyTo || null,
       scheduledFor: scheduledFor ? new Date(scheduledFor) : null,
       status: scheduledFor ? 'scheduled' : 'sent',
@@ -31,7 +41,7 @@ export const sendMessage = async (req, res, next) => {
     
     // Only update lastMessage immediately if it's not scheduled
     if (!scheduledFor) {
-      conversation.lastMessage = message;
+      conversation.lastMessage = imageUrl ? '📷 Photo' : message;
       conversation.lastMessageSenderId = senderId;
       conversation.lastMessageAt = new Date();
     }
@@ -60,7 +70,7 @@ export const sendMessage = async (req, res, next) => {
         conversationId: conversation._id,
         senderId,
         receiverId,
-        lastMessage: message,
+        lastMessage: imageUrl ? '📷 Photo' : message,
         lastMessageSenderId: senderId,
         lastMessageAt: conversation.lastMessageAt,
       };
