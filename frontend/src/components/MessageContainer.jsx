@@ -21,6 +21,16 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
   const [selectedImageFile, setSelectedImageFile] = useState(null);
   const [isSending, setIsSending] = useState(false);
   const [fullScreenImage, setFullScreenImage] = useState(null);
+  
+  // New Header Features State
+  const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
+  const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
+  const [isMessageSearchOpen, setIsMessageSearchOpen] = useState(false);
+  const [messageSearchQuery, setMessageSearchQuery] = useState('');
+  const [searchMatches, setSearchMatches] = useState([]);
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
+  const menuRef = useRef(null);
+
   const fileInputRef = useRef(null);
   
   const { authUser } = useAuthStore();
@@ -139,6 +149,101 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
     }
   };
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsHeaderMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleClearChat = async () => {
+    if (window.confirm('Are you sure you want to clear messages in this chat?')) {
+      try {
+        await axiosInstance.put(`/conversations/${selectedUser._id}/clear`);
+        setMessages([]);
+        toast.success('Chat cleared');
+        setIsHeaderMenuOpen(false);
+      } catch (error) {
+        toast.error('Failed to clear chat');
+      }
+    }
+  };
+
+  const handleDeleteConversation = async () => {
+    if (window.confirm('Are you sure you want to delete this conversation?')) {
+      try {
+        await axiosInstance.delete(`/conversations/${selectedUser._id}`);
+        toast.success('Conversation deleted');
+        useConversationStore.getState().fetchConversations();
+        setSelectedUser(null);
+      } catch (error) {
+        toast.error('Failed to delete conversation');
+      }
+    }
+  };
+
+  const handleExportChat = () => {
+    if (messages.length === 0) {
+      toast.error('No messages to export');
+      return;
+    }
+    const text = messages.map(msg => {
+      const time = new Date(msg.createdAt).toLocaleString();
+      const sender = msg.senderId === authUser._id ? 'You' : selectedUser.name;
+      const content = msg.image ? '[Image Attached]' : msg.message;
+      return `[${time}] ${sender}: ${content}`;
+    }).join('\n');
+
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `WhatsApp_Chat_${selectedUser.name.replace(/\s+/g, '_')}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setIsHeaderMenuOpen(false);
+  };
+
+  useEffect(() => {
+    if (!messageSearchQuery.trim()) {
+      setSearchMatches([]);
+      setCurrentMatchIndex(0);
+      return;
+    }
+    const query = messageSearchQuery.toLowerCase();
+    const matches = messages.filter(m => m.message && m.message.toLowerCase().includes(query));
+    setSearchMatches(matches);
+    setCurrentMatchIndex(matches.length > 0 ? matches.length - 1 : 0);
+  }, [messageSearchQuery, messages]);
+
+  const scrollToMatch = (index) => {
+    if (searchMatches.length === 0) return;
+    const msgId = searchMatches[index]._id;
+    const el = document.getElementById(`msg-${msgId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('bg-yellow-200', 'transition-colors', 'duration-500');
+      setTimeout(() => el.classList.remove('bg-yellow-200'), 1500);
+    }
+  };
+
+  const handleNextMatch = () => {
+    if (searchMatches.length === 0) return;
+    const nextIndex = currentMatchIndex < searchMatches.length - 1 ? currentMatchIndex + 1 : 0;
+    setCurrentMatchIndex(nextIndex);
+    scrollToMatch(nextIndex);
+  };
+
+  const handlePrevMatch = () => {
+    if (searchMatches.length === 0) return;
+    const prevIndex = currentMatchIndex > 0 ? currentMatchIndex - 1 : searchMatches.length - 1;
+    setCurrentMatchIndex(prevIndex);
+    scrollToMatch(prevIndex);
+  };
+
   if (!selectedUser) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-[#f0f2f5] h-full border-b-[6px] border-[#00a884]">
@@ -166,8 +271,10 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-      {/* Header */}
+    <div className="flex-1 flex h-full overflow-hidden relative bg-white">
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col h-full relative border-r border-gray-200 min-w-0">
+        {/* Header */}
       <div className="bg-[#f0f2f5] p-3 flex items-center justify-between shrink-0 h-16 border-l border-gray-200 z-10">
         <div className="flex items-center gap-3">
           {/* Back button for mobile */}
@@ -189,11 +296,64 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
         </div>
         
         {/* Header Icons */}
-        <div className="flex gap-4 text-[#54656f] mr-2">
-          <svg viewBox="0 0 24 24" width="24" height="24" className="cursor-pointer" fill="currentColor"><path d="M15.9 14.3H15l-.3-.3c1-1.1 1.6-2.7 1.6-4.3 0-3.7-3-6.7-6.7-6.7S3 6 3 9.7s3 6.7 6.7 6.7c1.6 0 3.2-.6 4.3-1.6l.3.3v.8l5.1 5.1 1.5-1.5-5-5.2zm-6.2 0c-2.6 0-4.6-2.1-4.6-4.6s2.1-4.6 4.6-4.6 4.6 2.1 4.6 4.6-2-4.6-4.6-4.6z"></path></svg>
-          <svg viewBox="0 0 24 24" width="24" height="24" className="cursor-pointer" fill="currentColor"><path d="M12 7a2 2 0 1 0-.001-4.001A2 2 0 0 0 12 7zm0 2a2 2 0 1 0-.001 3.999A2 2 0 0 0 12 9zm0 6a2 2 0 1 0-.001 3.999A2 2 0 0 0 12 15z"></path></svg>
+        <div className="flex gap-4 text-[#54656f] mr-2 relative">
+          <svg onClick={() => setIsMessageSearchOpen(!isMessageSearchOpen)} viewBox="0 0 24 24" width="24" height="24" className="cursor-pointer hover:text-black transition-colors" fill="currentColor">
+            <path d="M15.9 14.3H15l-.3-.3c1-1.1 1.6-2.7 1.6-4.3 0-3.7-3-6.7-6.7-6.7S3 6 3 9.7s3 6.7 6.7 6.7c1.6 0 3.2-.6 4.3-1.6l.3.3v.8l5.1 5.1 1.5-1.5-5-5.2zm-6.2 0c-2.6 0-4.6-2.1-4.6-4.6s2.1-4.6 4.6-4.6 4.6 2.1 4.6 4.6-2-4.6-4.6-4.6z"></path>
+          </svg>
+          <div ref={menuRef} className="relative">
+            <svg onClick={() => setIsHeaderMenuOpen(!isHeaderMenuOpen)} viewBox="0 0 24 24" width="24" height="24" className={`cursor-pointer hover:text-black transition-colors ${isHeaderMenuOpen ? 'text-black bg-black/5 rounded-full' : ''}`} fill="currentColor">
+              <path d="M12 7a2 2 0 1 0-.001-4.001A2 2 0 0 0 12 7zm0 2a2 2 0 1 0-.001 3.999A2 2 0 0 0 12 9zm0 6a2 2 0 1 0-.001 3.999A2 2 0 0 0 12 15z"></path>
+            </svg>
+            
+            {isHeaderMenuOpen && (
+              <div className="absolute right-0 top-10 w-48 bg-white shadow-[0_2px_5px_0_rgba(11,20,26,.26),0_2px_10px_0_rgba(11,20,26,.16)] rounded-[3px] py-2 z-50 animate-fade-in text-[#3b4a54] text-[14.5px]">
+                <button onClick={() => { setIsInfoPanelOpen(true); setIsHeaderMenuOpen(false); }} className="w-full text-left px-6 py-3 hover:bg-[#f5f6f6] transition-colors">Contact info</button>
+                <button onClick={handleClearChat} className="w-full text-left px-6 py-3 hover:bg-[#f5f6f6] transition-colors">Clear chat</button>
+                <button onClick={handleExportChat} className="w-full text-left px-6 py-3 hover:bg-[#f5f6f6] transition-colors">Export chat</button>
+                <button onClick={handleDeleteConversation} className="w-full text-left px-6 py-3 hover:bg-[#f5f6f6] transition-colors text-red-600">Delete chat</button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Message Search Bar */}
+      {isMessageSearchOpen && (
+        <div className="bg-white p-2 border-b border-gray-200 flex items-center gap-2 shadow-sm z-10 shrink-0">
+          <div className="flex-1 bg-[#f0f2f5] rounded-lg flex items-center px-3 py-1">
+            <svg viewBox="0 0 24 24" width="20" height="20" className="text-[#54656f]" fill="currentColor">
+              <path d="M15.9 14.3H15l-.3-.3c1-1.1 1.6-2.7 1.6-4.3 0-3.7-3-6.7-6.7-6.7S3 6 3 9.7s3 6.7 6.7 6.7c1.6 0 3.2-.6 4.3-1.6l.3.3v.8l5.1 5.1 1.5-1.5-5-5.2zm-6.2 0c-2.6 0-4.6-2.1-4.6-4.6s2.1-4.6 4.6-4.6 4.6 2.1 4.6 4.6-2-4.6-4.6-4.6z"></path>
+            </svg>
+            <input 
+              type="text"
+              autoFocus
+              className="w-full bg-transparent border-none focus:outline-none ml-3 text-[15px]"
+              placeholder="Search..."
+              value={messageSearchQuery}
+              onChange={(e) => setMessageSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handlePrevMatch();
+              }}
+            />
+          </div>
+          {searchMatches.length > 0 && (
+            <span className="text-[13px] text-[#54656f] mx-2">
+              {currentMatchIndex + 1} of {searchMatches.length}
+            </span>
+          )}
+          <div className="flex gap-1">
+            <button onClick={handleNextMatch} disabled={searchMatches.length === 0} className="p-2 text-[#54656f] disabled:opacity-30 hover:bg-gray-100 rounded">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 17.5l-6-6 1.4-1.4 4.6 4.6 4.6-4.6 1.4 1.4z"></path></svg>
+            </button>
+            <button onClick={handlePrevMatch} disabled={searchMatches.length === 0} className="p-2 text-[#54656f] disabled:opacity-30 hover:bg-gray-100 rounded">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 6.5l-6 6 1.4 1.4 4.6-4.6 4.6 4.6 1.4-1.4z"></path></svg>
+            </button>
+            <button onClick={() => { setIsMessageSearchOpen(false); setMessageSearchQuery(''); }} className="p-2 text-[#54656f] hover:bg-gray-100 rounded ml-1">
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Messages */}
       <div 
@@ -257,7 +417,7 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
                         )}
                         {msg.message && (
                           <span 
-                            className="text-[14.2px] text-[#111b21] break-words whitespace-pre-wrap leading-[19px] max-w-full"
+                            className="text-[14.2px] text-[#111b21] break-words whitespace-pre-wrap leading-[19px] max-w-full rounded"
                             style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
                             id={`msg-${msg._id}`}
                           >
@@ -473,6 +633,57 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
             className="max-w-full max-h-[90vh] object-contain rounded shadow-2xl" 
             onClick={(e) => e.stopPropagation()} // prevent closing when clicking the image
           />
+        </div>
+      )}
+      </div>
+      
+      {/* Right Info Panel */}
+      {isInfoPanelOpen && (
+        <div className="w-[350px] shrink-0 bg-[#f0f2f5] flex flex-col h-full overflow-y-auto animate-slide-in border-l border-gray-200">
+          <div className="h-16 flex items-center px-6 shrink-0 bg-white">
+            <button onClick={() => setIsInfoPanelOpen(false)} className="mr-6 text-[#54656f]">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                <path d="M12 4l1.4 1.4L7.8 11H20v2H7.8l5.6 5.6L12 20l-8-8 8-8z"></path>
+              </svg>
+            </button>
+            <span className="text-[16px] font-medium text-[#111b21]">Contact info</span>
+          </div>
+          
+          <div className="bg-white flex flex-col items-center py-8 px-4 shadow-sm mb-2">
+            <div className="w-[200px] h-[200px] bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-6xl font-bold mb-5 shadow-sm">
+              {selectedUser.name.charAt(0).toUpperCase()}
+            </div>
+            <h2 className="text-[22px] text-[#111b21] mb-1">{selectedUser.name}</h2>
+            <span className="text-[16px] text-[#667781] mb-1">
+              {selectedUser.email}
+            </span>
+            <span className={`text-[14px] ${onlineUsers.includes(selectedUser._id) ? 'text-[#00a884]' : 'text-[#667781]'}`}>
+              {onlineUsers.includes(selectedUser._id) ? 'Online' : (offlineUsers[selectedUser._id] || selectedUser.lastSeen) ? `Last seen ${new Date(offlineUsers[selectedUser._id] || selectedUser.lastSeen).toLocaleString()}` : 'Offline'}
+            </span>
+          </div>
+
+          <div className="bg-white px-7 py-4 shadow-sm mb-2">
+            <span className="text-[14px] text-[#00a884] mb-2 block font-medium">About</span>
+            <span className="text-[16px] text-[#111b21]">{selectedUser.about || 'Hey there! I am using MERN Chat.'}</span>
+          </div>
+
+          <div className="bg-white px-7 py-4 shadow-sm mb-2">
+            <span className="text-[14px] text-[#00a884] mb-2 block font-medium">Chat details</span>
+            <div className="flex flex-col gap-3 mt-2">
+              <div className="flex justify-between items-center">
+                <span className="text-[15px] text-[#111b21]">Total messages</span>
+                <span className="text-[14px] text-[#667781]">{messages.length}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-[15px] text-[#111b21]">Media shared</span>
+                <span className="text-[14px] text-[#667781]">{messages.filter(m => m.image).length}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-[15px] text-[#111b21]">Joined date</span>
+                <span className="text-[14px] text-[#667781]">{new Date(selectedUser.createdAt).toLocaleDateString()}</span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

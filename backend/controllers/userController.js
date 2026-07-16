@@ -10,6 +10,7 @@ export const getUsersForSidebar = async (req, res, next) => {
     // Find all conversations the logged-in user participates in, sorted by last activity
     const conversations = await Conversation.find({
       participants: loggedInUserId,
+      deletedBy: { $ne: loggedInUserId }
     })
       .sort({ updatedAt: -1 })
       .populate('participants', '-password');

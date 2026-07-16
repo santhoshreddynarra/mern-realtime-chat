@@ -43,6 +43,9 @@ export const sendMessage = async (req, res, next) => {
 
     conversation.messages.push(newMessage._id);
     
+    // If the conversation was deleted by either user, restore it since there's a new message
+    conversation.deletedBy = [];
+    
     // Only update lastMessage immediately if it's not scheduled
     if (!scheduledFor) {
       conversation.lastMessage = imageUrl ? '📷 Photo' : message;
@@ -110,9 +113,13 @@ export const getMessages = async (req, res, next) => {
 
     if (!conversation) return res.status(200).json([]);
 
-    const filteredMessages = conversation.messages.filter(msg => 
-      msg.status !== 'scheduled' || msg.senderId.toString() === senderId.toString()
-    );
+    const userClearData = conversation.clearedAt.find(c => c.userId.toString() === senderId.toString());
+    const clearTime = userClearData ? userClearData.clearedAt : null;
+
+    const filteredMessages = conversation.messages.filter(msg => {
+      if (clearTime && new Date(msg.createdAt) <= new Date(clearTime)) return false;
+      return msg.status !== 'scheduled' || msg.senderId.toString() === senderId.toString();
+    });
 
     res.status(200).json(filteredMessages);
   } catch (error) {

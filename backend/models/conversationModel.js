@@ -26,6 +26,15 @@ const conversationSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  clearedAt: [
+    {
+      userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      clearedAt: { type: Date }
+    }
+  ],
+  deletedBy: [
+    { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+  ],
 }, { timestamps: true });
 
 const Conversation = mongoose.model('Conversation', conversationSchema);
