@@ -23,12 +23,21 @@ export const sendMessage = async (req, res, next) => {
 
     let imageUrl = "";
     if (imagePath) {
-      const uploadResponse = await cloudinary.uploader.upload(imagePath, {
-        folder: "chat_app",
-      });
-      imageUrl = uploadResponse.secure_url;
-      // Clean up temp file
-      fs.unlinkSync(imagePath);
+      if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+        if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
+        return res.status(500).json({ message: "Cloudinary configuration is missing on the server." });
+      }
+
+      try {
+        const uploadResponse = await cloudinary.uploader.upload(imagePath, {
+          folder: "chat_app",
+        });
+        imageUrl = uploadResponse.secure_url;
+      } finally {
+        if (fs.existsSync(imagePath)) {
+          fs.unlinkSync(imagePath);
+        }
+      }
     }
 
     let newMessage = new Message({
@@ -88,7 +97,7 @@ export const sendMessage = async (req, res, next) => {
 
     res.status(201).json(newMessage);
   } catch (error) {
-    if (req.file?.path) {
+    if (req.file?.path && fs.existsSync(req.file.path)) {
       try {
         fs.unlinkSync(req.file.path);
       } catch (cleanupError) {
