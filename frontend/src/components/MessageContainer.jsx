@@ -38,6 +38,7 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
   const fileInputRef = useRef(null);
 
   const { authUser } = useAuthStore();
+  const { conversations } = useConversationStore();
   
   // Voice Recording hook
   const {
