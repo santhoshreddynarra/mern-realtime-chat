@@ -69,6 +69,7 @@ export const searchUsers = async (req, res, next) => {
         { name: regex },
         { username: regex },
         { phone: regex },
+        { email: regex },
       ],
     })
       .select('-password')

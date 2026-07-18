@@ -157,6 +157,22 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
       <div className="flex-1 overflow-y-auto bg-white custom-scrollbar">
         {loading ? (
           <Spinner />
+        ) : filteredConversations.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center px-4 py-10">
+            <div className="w-24 h-24 bg-[#f0f2f5] rounded-full flex items-center justify-center mb-6">
+              <svg viewBox="0 0 24 24" width="48" height="48" className="text-[#00a884]" fill="currentColor">
+                <path d="M19.005 3.175H4.674C3.642 3.175 3 3.789 3 4.821V21.02l3.544-3.514h12.461c1.033 0 2.064-1.06 2.064-2.093V4.821c-.001-1.032-1.032-1.646-2.064-1.646zm-4.989 9.869H7.041V11.1h6.975v1.944zm3-4H7.041V7.1h9.975v1.944z"></path>
+              </svg>
+            </div>
+            <h3 className="text-[#111b21] text-lg font-medium mb-2">Start your first conversation</h3>
+            <p className="text-[#667781] text-[14px] mb-6 max-w-[250px]">Connect with other registered users and start chatting right away.</p>
+            <button 
+              onClick={() => setIsNewChatOpen(true)}
+              className="bg-[#00a884] text-white px-6 py-2.5 rounded-full font-medium hover:bg-[#008f6f] transition-colors shadow-sm"
+            >
+              New Chat
+            </button>
+          </div>
         ) : (
           filteredConversations.map((user) => {
             const isOnline = onlineUsers.includes(user._id);
