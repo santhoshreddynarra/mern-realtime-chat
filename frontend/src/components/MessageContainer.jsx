@@ -186,12 +186,7 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
       
       const res = await axiosInstance.post(
         `/messages/send-voice/${selectedUser._id}`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        }
+        formData
       );
       
       setMessages((prev) => [...prev, res.data]);
