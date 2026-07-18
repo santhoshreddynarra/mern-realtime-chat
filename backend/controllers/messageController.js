@@ -11,6 +11,10 @@ export const sendMessage = async (req, res, next) => {
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
 
+    if (!message && !imagePath) {
+      return res.status(400).json({ message: "Message or image is required" });
+    }
+
     let conversation = await Conversation.findOne({
       participants: { $all: [senderId, receiverId] },
     });
