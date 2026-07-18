@@ -136,7 +136,11 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
         formData.append('scheduledFor', new Date(scheduleDate).toISOString());
       }
 
-      const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, formData);
+      const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
       setMessages((prev) => [...prev, res.data]);
       setNewMessage('');
       removeImage();
