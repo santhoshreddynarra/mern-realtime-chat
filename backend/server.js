@@ -13,6 +13,13 @@ import { app, server } from './socket/socket.js';
 import startScheduleWorker from './cron/scheduleWorker.js';
 
 dotenv.config();
+console.log("========== ENV TEST ==========");
+console.log("PORT:", process.env.PORT);
+console.log("Cloud Name:", process.env.CLOUDINARY_CLOUD_NAME);
+console.log("API Key:", process.env.CLOUDINARY_API_KEY);
+console.log("API Secret:", process.env.CLOUDINARY_API_SECRET);
+console.log("==============================");
+
 const port = process.env.PORT || 5000;
 const __dirname = path.resolve();
 
