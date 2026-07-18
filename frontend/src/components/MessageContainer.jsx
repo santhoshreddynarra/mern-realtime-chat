@@ -2,6 +2,10 @@ import { useEffect, useState, useRef } from 'react';
 import axiosInstance from '../api/axiosInstance';
 import { useAuthStore } from '../store/useAuthStore';
 import { useConversationStore } from '../store/useConversationStore';
+import useVoiceRecorder from '../hooks/useVoiceRecorder';
+import VoiceRecorderUI from './VoiceRecorderUI';
+import VoiceMessageBubble from './VoiceMessageBubble';
+import { Mic } from 'lucide-react';
 import { useSocketStore } from '../store/useSocketStore';
 import toast from 'react-hot-toast';
 import useListenMessages from '../hooks/useListenMessages';
@@ -34,7 +38,18 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
   const fileInputRef = useRef(null);
 
   const { authUser } = useAuthStore();
-  const { conversations } = useConversationStore();
+  
+  // Voice Recording hook
+  const {
+    isRecording,
+    recordingTime,
+    formattedTime,
+    audioBlob,
+    startRecording,
+    stopRecording,
+    cancelRecording,
+    resetRecording
+  } = useVoiceRecorder();
   const messagesEndRef = useRef(null);
   const { isTyping, handleTyping, stopTyping } = useTyping(selectedUser);
   const { onlineUsers, offlineUsers } = useSocketStore();
@@ -153,6 +168,41 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
     }
   };
 
+  const handleSendVoiceMessage = async (blob, duration) => {
+    if (!blob || !selectedUser) return;
+    
+    setIsSending(true);
+    try {
+      const formData = new FormData();
+      formData.append('audio', blob, 'voice-message.webm');
+      formData.append('duration', duration);
+      
+      if (replyingTo) {
+        formData.append('replyTo', replyingTo._id);
+      }
+
+      // Voice messages are not currently scheduled, but logic could be added here
+      
+      const res = await axiosInstance.post(
+        `/messages/send-voice/${selectedUser._id}`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+      
+      setMessages((prev) => [...prev, res.data]);
+      resetRecording();
+      setReplyingTo(null);
+    } catch (error) {
+      toast.error('Failed to send voice message');
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -160,8 +210,24 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
+
+  useEffect(() => {
+    window.isVoiceRecording = isRecording;
+    const handleCancel = () => {
+      if (isRecording) {
+        cancelRecording();
+      }
+    };
+    window.addEventListener('cancel-voice-recording', handleCancel);
+    return () => {
+      window.removeEventListener('cancel-voice-recording', handleCancel);
+      window.isVoiceRecording = false;
+    };
+  }, [isRecording, cancelRecording]);
 
   const handleClearChat = async () => {
     if (window.confirm('Are you sure you want to clear messages in this chat?')) {
@@ -282,7 +348,13 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
         <div className="bg-[#f0f2f5] p-3 flex items-center justify-between shrink-0 h-16 border-l border-gray-200 z-10">
           <div className="flex items-center gap-3">
             {/* Back button for mobile */}
-            <button onClick={() => setSelectedUser(null)} className="md:hidden text-[#54656f]">
+            <button onClick={() => {
+              if (window.isVoiceRecording) {
+                if (!window.confirm("You are currently recording. Discard voice message?")) return;
+                window.dispatchEvent(new Event('cancel-voice-recording'));
+              }
+              setSelectedUser(null);
+            }} className="md:hidden text-[#54656f]">
               <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
                 <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path>
               </svg>
@@ -410,23 +482,29 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
 
                       <div className="flex flex-wrap items-end justify-between mt-[2px]">
                         <div className="flex flex-col w-full max-w-full">
-                          {msg.image && (
-                            <img
-                              src={msg.image}
-                              alt="Attached file"
-                              className="rounded-lg mb-1 max-w-full cursor-pointer hover:opacity-95 transition-opacity bg-black/5"
-                              style={{ maxHeight: '250px', objectFit: 'contain' }}
-                              onClick={() => setFullScreenImage(msg.image)}
-                            />
-                          )}
-                          {msg.message && (
-                            <span
-                              className="text-[14.2px] text-[#111b21] break-words whitespace-pre-wrap leading-[19px] max-w-full rounded"
-                              style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
-                              id={`msg-${msg._id}`}
-                            >
-                              {msg.message}
-                            </span>
+                          {msg.audio ? (
+                            <VoiceMessageBubble msg={msg} isOwn={isOwn} />
+                          ) : (
+                            <>
+                              {msg.image && (
+                                <img
+                                  src={msg.image}
+                                  alt="Attached file"
+                                  className="rounded-lg mb-1 max-w-full cursor-pointer hover:opacity-95 transition-opacity bg-black/5"
+                                  style={{ maxHeight: '250px', objectFit: 'contain' }}
+                                  onClick={() => setFullScreenImage(msg.image)}
+                                />
+                              )}
+                              {msg.message && (
+                                <span
+                                  className="text-[14.2px] text-[#111b21] break-words whitespace-pre-wrap leading-[19px] max-w-full rounded"
+                                  style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
+                                  id={`msg-${msg._id}`}
+                                >
+                                  {msg.message}
+                                </span>
+                              )}
+                            </>
                           )}
                         </div>
                         <div className="flex items-center gap-[2px] text-[11px] text-[#667781] shrink-0 ml-auto pl-3 pb-[1px]">
@@ -554,65 +632,76 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
             </div>
           )}
 
-          <form onSubmit={handleSendMessage} className="bg-[#f0f2f5] px-4 py-3 flex items-center gap-3">
-            <input type="file" accept="image/png, image/jpeg, image/jpg, image/webp" className="hidden" ref={fileInputRef} onChange={handleImageChange} />
-
-            <button type="button" onClick={() => fileInputRef.current?.click()} className="text-[#54656f] hover:text-[#00a884] transition-colors p-1" title="Attach image">
-              <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
-                <path d="M1.816 15.556v.002c0 1.502.584 2.912 1.646 3.972s2.472 1.647 3.974 1.647a5.58 5.58 0 0 0 3.972-1.645l9.547-9.548c.769-.768 1.147-1.767 1.058-2.817-.079-.968-.548-1.927-1.319-2.698-1.594-1.592-4.068-1.711-5.517-.262l-7.916 7.915c-.881.881-.792 2.25.214 3.261.959.958 2.423 1.053 3.263.215l5.511-5.512c.28-.28.267-.722.053-.936l-.244-.244c-.191-.191-.567-.349-.957.04l-5.506 5.506c-.18.18-.635.127-.976-.214-.098-.097-.576-.613-.213-.973l7.915-7.917c.818-.817 2.267-.699 3.23.262.5.501.802 1.1.849 1.685.051.573-.156 1.111-.589 1.543l-9.547 9.549a3.97 3.97 0 0 1-2.829 1.171 3.975 3.975 0 0 1-2.83-1.173 3.973 3.973 0 0 1-1.172-2.828c0-1.071.415-2.076 1.172-2.83l7.209-7.211c.157-.264.123-.624-.131-.877l-.242-.242c-.227-.227-.557-.3-.811-.115l-7.203 7.205c-1.422 1.423-2.205 3.313-2.205 5.32z"></path>
-              </svg>
-            </button>
-
-            <input
-              type="text"
-              className="flex-1 bg-white border-none rounded-lg px-4 py-[9px] text-[15px] focus:outline-none placeholder-[#8696a0]"
-              placeholder="Type a message"
-              value={newMessage}
-              onChange={(e) => {
-                setNewMessage(e.target.value);
-                if (e.target.value.trim().length > 0) handleTyping();
-                else stopTyping();
-              }}
+          {isRecording || audioBlob ? (
+            <VoiceRecorderUI 
+              isRecording={isRecording}
+              recordingTime={recordingTime}
+              formattedTime={formattedTime}
+              audioBlob={audioBlob}
+              onStart={startRecording}
+              onStop={stopRecording}
+              onCancel={cancelRecording}
+              onSend={handleSendVoiceMessage}
             />
-            {/* Schedule toggle button */}
-            <button
-              type="button"
-              onClick={() => setIsScheduling(prev => !prev)}
-              className={`p-1 transition-colors shrink-0 ${isScheduling ? 'text-[#00a884]' : 'text-[#54656f] hover:text-[#00a884]'}`}
-              title={isScheduling ? 'Cancel scheduling' : 'Schedule message'}
-            >
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.2 14.2L11 11V6h1.5v4.4l4.5 4.5-.8.9z"></path>
-              </svg>
-            </button>
+          ) : (
+            <form onSubmit={handleSendMessage} className="bg-[#f0f2f5] px-4 py-3 flex items-center gap-3 w-full">
+              <input type="file" accept="image/png, image/jpeg, image/jpg, image/webp" className="hidden" ref={fileInputRef} onChange={handleImageChange} />
 
-            {newMessage.trim().length > 0 || selectedImage ? (
-              <button
-                type="submit"
-                disabled={isSending || (isScheduling && !scheduleDate)}
-                className={`p-1 transition-colors shrink-0 ${isSending || (isScheduling && !scheduleDate) ? 'text-gray-300 cursor-not-allowed' : 'text-[#54656f] hover:text-[#00a884]'}`}
-                title={isScheduling ? 'Send scheduled message' : 'Send'}
-              >
-                {isSending ? (
-                  <Spinner />
-                ) : isScheduling ? (
-                  <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
-                    <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-7 3l5 3.5L13 14l-5-3.5L13 7zm0 7l-6-4.2V17h12v-7.2L13 14z"></path>
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
-                    <path d="M1.101 21.757L23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z"></path>
-                  </svg>
-                )}
-              </button>
-            ) : (
-              <button type="button" className="text-[#54656f] hover:text-[#00a884] p-1 transition-colors shrink-0">
+              <button type="button" onClick={() => fileInputRef.current?.click()} className="text-[#54656f] hover:text-[#00a884] transition-colors p-1 shrink-0" title="Attach image">
                 <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
-                  <path d="M11.999 14.942c2.001 0 3.531-1.53 3.531-3.531V4.35c0-2.001-1.53-3.531-3.531-3.531S8.469 2.35 8.469 4.35v7.061c0 2.001 1.53 3.531 3.53 3.531zm6.238-3.53c0 3.531-2.942 6.002-6.237 6.002s-6.237-2.471-6.237-6.002H3.761c0 4.001 3.178 7.297 7.061 7.885v3.884h2.354v-3.884c3.884-.588 7.061-3.884 7.061-7.885h-2.002z"></path>
+                  <path d="M1.816 15.556v.002c0 1.502.584 2.912 1.646 3.972s2.472 1.647 3.974 1.647a5.58 5.58 0 0 0 3.972-1.645l9.547-9.548c.769-.768 1.147-1.767 1.058-2.817-.079-.968-.548-1.927-1.319-2.698-1.594-1.592-4.068-1.711-5.517-.262l-7.916 7.915c-.881.881-.792 2.25.214 3.261.959.958 2.423 1.053 3.263.215l5.511-5.512c.28-.28.267-.722.053-.936l-.244-.244c-.191-.191-.567-.349-.957.04l-5.506 5.506c-.18.18-.635.127-.976-.214-.098-.097-.576-.613-.213-.973l7.915-7.917c.818-.817 2.267-.699 3.23.262.5.501.802 1.1.849 1.685.051.573-.156 1.111-.589 1.543l-9.547 9.549a3.97 3.97 0 0 1-2.829 1.171 3.975 3.975 0 0 1-2.83-1.173 3.973 3.973 0 0 1-1.172-2.828c0-1.071.415-2.076 1.172-2.83l7.209-7.211c.157-.264.123-.624-.131-.877l-.242-.242c-.227-.227-.557-.3-.811-.115l-7.203 7.205c-1.422 1.423-2.205 3.313-2.205 5.32z"></path>
                 </svg>
               </button>
-            )}
-          </form>
+
+              <input
+                type="text"
+                className="flex-1 bg-white border-none rounded-lg px-4 py-[9px] text-[15px] focus:outline-none placeholder-[#8696a0] min-w-0"
+                placeholder="Type a message"
+                value={newMessage}
+                onChange={(e) => {
+                  setNewMessage(e.target.value);
+                  if (e.target.value.trim().length > 0) handleTyping();
+                  else stopTyping();
+                }}
+              />
+              {/* Schedule toggle button */}
+              <button
+                type="button"
+                onClick={() => setIsScheduling(prev => !prev)}
+                className={`p-1 transition-colors shrink-0 ${isScheduling ? 'text-[#00a884]' : 'text-[#54656f] hover:text-[#00a884]'}`}
+                title={isScheduling ? 'Cancel scheduling' : 'Schedule message'}
+              >
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                  <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.2 14.2L11 11V6h1.5v4.4l4.5 4.5-.8.9z"></path>
+                </svg>
+              </button>
+
+              {newMessage.trim().length > 0 || selectedImage ? (
+                <button
+                  type="submit"
+                  disabled={isSending || (isScheduling && !scheduleDate)}
+                  className={`p-1 transition-colors shrink-0 ${isSending || (isScheduling && !scheduleDate) ? 'text-gray-300 cursor-not-allowed' : 'text-[#54656f] hover:text-[#00a884]'}`}
+                  title={isScheduling ? 'Send scheduled message' : 'Send'}
+                >
+                  {isSending ? (
+                    <Spinner />
+                  ) : isScheduling ? (
+                    <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
+                      <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-7 3l5 3.5L13 14l-5-3.5L13 7zm0 7l-6-4.2V17h12v-7.2L13 14z"></path>
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
+                      <path d="M1.101 21.757L23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z"></path>
+                    </svg>
+                  )}
+                </button>
+              ) : (
+                <button type="button" onClick={startRecording} className="text-[#54656f] hover:text-[#00a884] p-1 transition-colors shrink-0" title="Record voice message">
+                  <Mic size={24} />
+                </button>
+              )}
+            </form>
+          )}
         </div>
 
         {/* Image Full Screen Modal */}
