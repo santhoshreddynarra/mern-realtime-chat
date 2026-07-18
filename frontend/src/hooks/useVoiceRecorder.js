@@ -4,10 +4,33 @@ const useVoiceRecorder = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioBlob, setAudioBlob] = useState(null);
-  
+
   const mediaRecorder = useRef(null);
   const audioChunks = useRef([]);
   const timerInterval = useRef(null);
+
+  const stopRecording = useCallback(() => {
+    if (mediaRecorder.current && isRecording) {
+      mediaRecorder.current.stop();
+      setIsRecording(false);
+      clearInterval(timerInterval.current);
+    }
+  }, [isRecording]);
+
+  const cancelRecording = useCallback(() => {
+    if (mediaRecorder.current && isRecording) {
+      mediaRecorder.current.stop();
+      setIsRecording(false);
+      clearInterval(timerInterval.current);
+      setAudioBlob(null);
+      audioChunks.current = [];
+    }
+  }, [isRecording]);
+
+  const resetRecording = useCallback(() => {
+    setAudioBlob(null);
+    setRecordingTime(0);
+  }, []);
 
   const startRecording = useCallback(async () => {
     try {
@@ -46,29 +69,6 @@ const useVoiceRecorder = () => {
       throw error; // Let the caller handle the UI error toast
     }
   }, [stopRecording]);
-
-  const stopRecording = useCallback(() => {
-    if (mediaRecorder.current && isRecording) {
-      mediaRecorder.current.stop();
-      setIsRecording(false);
-      clearInterval(timerInterval.current);
-    }
-  }, [isRecording]);
-
-  const cancelRecording = useCallback(() => {
-    if (mediaRecorder.current && isRecording) {
-      mediaRecorder.current.stop();
-      setIsRecording(false);
-      clearInterval(timerInterval.current);
-      setAudioBlob(null);
-      audioChunks.current = [];
-    }
-  }, [isRecording]);
-
-  const resetRecording = useCallback(() => {
-    setAudioBlob(null);
-    setRecordingTime(0);
-  }, []);
 
   const formatTime = (timeInSeconds) => {
     const minutes = Math.floor(timeInSeconds / 60);
