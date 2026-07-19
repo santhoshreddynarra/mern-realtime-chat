@@ -43,7 +43,7 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
     try {
       await axiosInstance.post('/auth/logout');
       useSocketStore.getState().disconnectSocket();
-      useConversationStore.getState().conversations = [];
+      useConversationStore.getState().clearConversations();
       setAuthUser(null);
     } catch (error) {
       toast.error('Logout failed');

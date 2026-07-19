@@ -95,4 +95,6 @@ export const useConversationStore = create((set, get) => ({
   updateConversation: ({ conversationId, senderId, receiverId, lastMessage, lastMessageAt, isNew }, authUserId) => {
     get().listenForConversationUpdates; // no-op legacy shim
   },
+
+  clearConversations: () => set({ conversations: [] }),
 }));
