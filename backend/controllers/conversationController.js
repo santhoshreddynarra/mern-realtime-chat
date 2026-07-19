@@ -1,6 +1,6 @@
 import Conversation from '../models/conversationModel.js';
 import User from '../models/userModel.js';
-import { getReceiverSocketId, io } from '../socket/socket.js';
+import { emitToUser, io } from '../socket/socket.js';
 
 // POST /api/conversations
 // Create or get conversation between logged-in user and target user
@@ -31,9 +31,6 @@ export const createOrGetConversation = async (req, res, next) => {
     conversation = await conversation.populate('participants', '-password');
 
     // Notify both users via Socket.IO
-    const senderSocketId = getReceiverSocketId(senderId.toString());
-    const receiverSocketId = getReceiverSocketId(userId.toString());
-
     const convUpdate = {
       conversationId: conversation._id,
       senderId,
@@ -43,12 +40,8 @@ export const createOrGetConversation = async (req, res, next) => {
       isNew: true
     };
 
-    if (senderSocketId) {
-      io.to(senderSocketId).emit('conversation:update', convUpdate);
-    }
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit('conversation:update', convUpdate);
-    }
+    emitToUser(senderId.toString(), 'conversation:update', convUpdate);
+    emitToUser(userId.toString(), 'conversation:update', convUpdate);
 
     res.status(201).json(conversation);
   } catch (error) {

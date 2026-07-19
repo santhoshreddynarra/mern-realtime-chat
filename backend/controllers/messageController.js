@@ -1,6 +1,6 @@
 import Conversation from '../models/conversationModel.js';
 import Message from '../models/messageModel.js';
-import { getReceiverSocketId, io } from '../socket/socket.js';
+import { emitToUser, io } from '../socket/socket.js';
 export const sendMessage = async (req, res, next) => {
   try {
     const { message, replyTo, scheduledFor } = req.body;
@@ -45,17 +45,10 @@ export const sendMessage = async (req, res, next) => {
       await newMessage.populate('replyTo', 'message senderId');
     }
 
-    const senderSocketId = getReceiverSocketId(senderId.toString());
-    const receiverSocketId = getReceiverSocketId(receiverId);
-
     if (scheduledFor) {
-      if (senderSocketId) {
-        io.to(senderSocketId).emit('newMessage', newMessage);
-      }
+      emitToUser(senderId.toString(), 'newMessage', newMessage);
     } else {
-      if (receiverSocketId) {
-        io.to(receiverSocketId).emit('newMessage', newMessage);
-      }
+      emitToUser(receiverId, 'newMessage', newMessage);
 
       const convUpdate = {
         conversationId: conversation._id,
@@ -66,8 +59,8 @@ export const sendMessage = async (req, res, next) => {
         lastMessageAt: conversation.lastMessageAt,
       };
 
-      if (senderSocketId) io.to(senderSocketId).emit('conversation:update', convUpdate);
-      if (receiverSocketId) io.to(receiverSocketId).emit('conversation:update', convUpdate);
+      emitToUser(senderId.toString(), 'conversation:update', convUpdate);
+      emitToUser(receiverId, 'conversation:update', convUpdate);
     }
 
     res.status(201).json(newMessage);
@@ -115,10 +108,7 @@ export const markMessagesAsRead = async (req, res, next) => {
       { $set: { status: 'read' } }
     );
 
-    const senderSocketId = getReceiverSocketId(senderId);
-    if (senderSocketId) {
-      io.to(senderSocketId).emit('messages:read', { readerId: receiverId });
-    }
+    emitToUser(senderId, 'messages:read', { readerId: receiverId });
 
     res.status(200).json({ message: 'Messages marked as read' });
   } catch (error) {
