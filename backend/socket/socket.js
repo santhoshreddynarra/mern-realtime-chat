@@ -1,6 +1,7 @@
 import { Server } from 'socket.io';
 import http from 'http';
 import express from 'express';
+import jwt from 'jsonwebtoken';
 import Message from '../models/messageModel.js';
 import User from '../models/userModel.js';
 
@@ -10,6 +11,7 @@ const io = new Server(server, {
   cors: {
     origin: process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',') : ['http://localhost:5173', 'http://localhost:5174'],
     methods: ['GET', 'POST'],
+    credentials: true,
   },
 });
 
@@ -19,11 +21,38 @@ export const getReceiverSocketId = (receiverId) => {
   return userSocketMap[receiverId];
 };
 
-io.on('connection', (socket) => {
-  console.log('A user connected:', socket.id);
+// ─── Socket.IO JWT Authentication Middleware ──────────────────────────────────
+// Reads the httpOnly jwt cookie from the WebSocket upgrade request headers,
+// verifies it, and attaches socket.userId. Rejects unauthenticated connections.
+io.use((socket, next) => {
+  try {
+    const cookieHeader = socket.handshake.headers.cookie || '';
 
-  const userId = socket.handshake.query.userId;
-  if (userId && userId !== 'undefined') {
+    // Parse cookie string: "key=val; key2=val2" → { key: val, key2: val2 }
+    const cookies = Object.fromEntries(
+      cookieHeader.split(';').map(c => {
+        const [k, ...v] = c.trim().split('=');
+        return [k, decodeURIComponent(v.join('='))];
+      }).filter(([k]) => k)
+    );
+
+    const token = cookies.jwt;
+    if (!token) {
+      return next(new Error('Unauthorized: no token'));
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    socket.userId = decoded.userId;
+    next();
+  } catch (err) {
+    next(new Error('Unauthorized: invalid token'));
+  }
+});
+
+io.on('connection', (socket) => {
+  const userId = socket.userId; // Verified server-side — never trust query params
+
+  if (userId) {
     userSocketMap[userId] = socket.id;
   }
 
@@ -44,7 +73,10 @@ io.on('connection', (socket) => {
   });
 
   socket.on('message:delivered', async ({ messageId, senderId }) => {
-    // Update DB to delivered
+    // Prevent spoofing: only allow delivery receipts where the socket owner is the actual receiver
+    const msg = await Message.findById(messageId).select('receiverId');
+    if (!msg || msg.receiverId.toString() !== userId) return;
+
     await Message.findByIdAndUpdate(messageId, { status: 'delivered' });
     const senderSocketId = getReceiverSocketId(senderId);
     if (senderSocketId) {
@@ -53,7 +85,6 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', async () => {
-    console.log('User disconnected:', socket.id);
     if (userId) {
       delete userSocketMap[userId];
       const lastSeenTime = new Date();

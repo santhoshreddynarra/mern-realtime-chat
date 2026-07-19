@@ -12,8 +12,8 @@ export const useSocketStore = create((set, get) => ({
     if (socket && socket.connected) return;
 
     const newSocket = io(import.meta.env.VITE_SOCKET_URL || "/", {
-      query: { userId },
-      transports: ['websocket'], // Skip polling to prevent duplicate connection races
+      // No userId query param — server authenticates via the httpOnly JWT cookie
+      transports: ['websocket'],
     });
 
     set({ socket: newSocket });
