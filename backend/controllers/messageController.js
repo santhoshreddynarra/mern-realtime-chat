@@ -1,6 +1,6 @@
 import Conversation from '../models/conversationModel.js';
 import Message from '../models/messageModel.js';
-import { emitToUser, io } from '../socket/socket.js';
+import { emitToUser } from '../socket/socket.js';
 export const sendMessage = async (req, res, next) => {
   try {
     const { message, replyTo, scheduledFor } = req.body;

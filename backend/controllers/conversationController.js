@@ -1,6 +1,5 @@
 import Conversation from '../models/conversationModel.js';
-import User from '../models/userModel.js';
-import { emitToUser, io } from '../socket/socket.js';
+import { emitToUser } from '../socket/socket.js';
 
 // POST /api/conversations
 // Create or get conversation between logged-in user and target user

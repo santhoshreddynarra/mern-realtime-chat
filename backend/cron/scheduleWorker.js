@@ -1,7 +1,7 @@
 import cron from 'node-cron';
 import Message from '../models/messageModel.js';
 import Conversation from '../models/conversationModel.js';
-import { emitToUser, io } from '../socket/socket.js';
+import { emitToUser } from '../socket/socket.js';
 
 const startScheduleWorker = () => {
   // Run every minute
