@@ -6,34 +6,50 @@ export const useSocketStore = create((set, get) => ({
   onlineUsers: [],
   offlineUsers: {},
 
-  connectSocket: (userId) => {
+  connectSocket: () => {
     const { socket } = get();
-    // Guard: don't create a new socket if one is already connected for this user
+
+    // Prevent duplicate connections
     if (socket && socket.connected) return;
 
     const newSocket = io(import.meta.env.VITE_SOCKET_URL || "/", {
-      // No userId query param — server authenticates via the httpOnly JWT cookie
-      transports: ['websocket'],
+      transports: ["websocket"],
+      withCredentials: true,
     });
 
     set({ socket: newSocket });
 
-    newSocket.on('getOnlineUsers', (users) => {
+    newSocket.on("connect", () => {
+      console.log("✅ Socket connected:", newSocket.id);
+    });
+
+    newSocket.on("disconnect", () => {
+      console.log("❌ Socket disconnected");
+    });
+
+    newSocket.on("getOnlineUsers", (users) => {
       set({ onlineUsers: users });
     });
 
-    newSocket.on('user:offline', ({ userId, lastSeen }) => {
+    newSocket.on("user:offline", ({ userId, lastSeen }) => {
       set((state) => ({
-        offlineUsers: { ...state.offlineUsers, [userId]: lastSeen }
+        offlineUsers: {
+          ...state.offlineUsers,
+          [userId]: lastSeen,
+        },
       }));
     });
   },
 
   disconnectSocket: () => {
     const { socket } = get();
+
     if (socket) {
       socket.disconnect();
-      set({ socket: null, onlineUsers: [] });
+      set({
+        socket: null,
+        onlineUsers: [],
+      });
     }
   },
 }));
