@@ -12,7 +12,7 @@ export const useAuthStore = create((set) => ({
 
   signup: async (data) => {
     try {
-      const res = await axiosInstance.post('/auth/register', data);
+      const res = await axiosInstance.post('/auth/signup', data);
       localStorage.setItem('chat-user', JSON.stringify(res.data));
       set({ authUser: res.data });
       toast.success('Account created successfully');
