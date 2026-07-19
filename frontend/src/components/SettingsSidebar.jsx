@@ -11,12 +11,10 @@ const SettingsSidebar = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     // Load settings from localStorage
-    const settings = JSON.parse(localStorage.getItem('whatsapp_settings')) || {
-      autoDownload: false
-    };
-    setNotifications(settings.notifications);
-    setSounds(settings.sounds);
-    setAutoDownload(settings.autoDownload);
+    const settings = JSON.parse(localStorage.getItem('whatsapp_settings')) || {};
+    setNotifications(settings.notifications !== undefined ? settings.notifications : true);
+    setSounds(settings.sounds !== undefined ? settings.sounds : true);
+    setAutoDownload(settings.autoDownload !== undefined ? settings.autoDownload : false);
   }, []);
 
   const saveSettings = (newSettings) => {

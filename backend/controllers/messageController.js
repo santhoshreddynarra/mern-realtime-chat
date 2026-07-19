@@ -48,19 +48,19 @@ export const sendMessage = async (req, res, next) => {
     if (scheduledFor) {
       emitToUser(senderId.toString(), 'newMessage', newMessage);
     } else {
-      emitToUser(receiverId, 'newMessage', newMessage);
+      emitToUser(receiverId.toString(), 'newMessage', newMessage);
 
       const convUpdate = {
         conversationId: conversation._id,
-        senderId,
-        receiverId,
+        senderId: senderId.toString(),
+        receiverId: receiverId.toString(),
         lastMessage: message,
-        lastMessageSenderId: senderId,
+        lastMessageSenderId: senderId.toString(),
         lastMessageAt: conversation.lastMessageAt,
       };
 
       emitToUser(senderId.toString(), 'conversation:update', convUpdate);
-      emitToUser(receiverId, 'conversation:update', convUpdate);
+      emitToUser(receiverId.toString(), 'conversation:update', convUpdate);
     }
 
     res.status(201).json(newMessage);
@@ -108,7 +108,7 @@ export const markMessagesAsRead = async (req, res, next) => {
       { $set: { status: 'read' } }
     );
 
-    emitToUser(senderId, 'messages:read', { readerId: receiverId });
+    emitToUser(senderId, 'messages:read', { readerId: receiverId.toString() });
 
     res.status(200).json({ message: 'Messages marked as read' });
   } catch (error) {

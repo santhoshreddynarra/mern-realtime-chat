@@ -63,10 +63,16 @@ const useTyping = (selectedUser) => {
     }
   };
 
-  // Cleanup local typing state when unmounting
+  // Cleanup local typing state when unmounting or switching conversations
   useEffect(() => {
     return () => {
-      stopTyping();
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      if (socket && selectedUser && isLocalTypingRef.current) {
+        isLocalTypingRef.current = false;
+        socket.emit('typing:stop', { receiverId: selectedUser._id });
+      }
     };
   }, [socket, selectedUser]);
 
