@@ -15,31 +15,6 @@ const messageSchema = new mongoose.Schema({
     type: String,
     default: ""
   },
-  image: {
-    type: String,
-    default: ""
-  },
-  audio: {
-    type: String,
-    default: ""
-  },
-  audioDuration: {
-    type: Number,
-    default: 0
-  },
-  audioSize: {
-    type: Number,
-    default: 0
-  },
-  audioFormat: {
-    type: String,
-    default: ""
-  },
-  messageType: {
-    type: String,
-    enum: ['text', 'image', 'voice'],
-    default: 'text'
-  },
   status: {
     type: String,
     enum: ['sent', 'delivered', 'read', 'scheduled'],

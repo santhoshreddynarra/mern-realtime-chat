@@ -182,11 +182,6 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
               <div 
                 key={user._id} 
                 onClick={() => {
-                  if (window.isVoiceRecording) {
-                    if (!window.confirm("You are currently recording. Discard voice message?")) return;
-                    // Trigger a custom event to tell the recorder to cancel
-                    window.dispatchEvent(new Event('cancel-voice-recording'));
-                  }
                   setSelectedUser(user);
                 }}
                 className={`flex items-center px-3 cursor-pointer hover:bg-[#f5f6f6] transition-colors ${isSelected ? 'bg-[#f0f2f5]' : ''}`}

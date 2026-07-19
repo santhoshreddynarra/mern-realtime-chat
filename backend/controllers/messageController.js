@@ -1,20 +1,14 @@
 import Conversation from '../models/conversationModel.js';
 import Message from '../models/messageModel.js';
 import { getReceiverSocketId, io } from '../socket/socket.js';
-import cloudinary from '../config/cloudinary.js';
-import fs from 'fs';
-
 export const sendMessage = async (req, res, next) => {
   try {
     const { message, replyTo, scheduledFor } = req.body;
-    const imagePath = req.file?.path;
-    console.log("req.file =", req.file);
-    console.log("imagePath =", imagePath);
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
 
-    if (!message && !imagePath) {
-      return res.status(400).json({ message: "Message or image is required" });
+    if (!message) {
+      return res.status(400).json({ message: "Message is required" });
     }
 
     let conversation = await Conversation.findOne({
@@ -27,53 +21,20 @@ export const sendMessage = async (req, res, next) => {
       });
     }
 
-    let imageUrl = "";
-    if (imagePath) {
-      if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-        if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
-        return res.status(500).json({ message: "Cloudinary configuration is missing on the server." });
-      }
-
-      try {
-        console.log("Uploading image:", imagePath);
-
-        const uploadResponse = await cloudinary.uploader.upload(imagePath, {
-          folder: "chat_app",
-        });
-
-        console.log("Cloudinary Response:", uploadResponse);
-
-        imageUrl = uploadResponse.secure_url;
-
-      } catch (err) {
-        console.error("Cloudinary Upload Error:", err);
-        throw err;
-
-      } finally {
-        if (fs.existsSync(imagePath)) {
-          fs.unlinkSync(imagePath);
-        }
-      }
-    }
-
     let newMessage = new Message({
       senderId,
       receiverId,
-      message: message || "",
-      image: imageUrl,
+      message,
       replyTo: replyTo || null,
       scheduledFor: scheduledFor ? new Date(scheduledFor) : null,
       status: scheduledFor ? 'scheduled' : 'sent',
     });
 
     conversation.messages.push(newMessage._id);
-
-    // If the conversation was deleted by either user, restore it since there's a new message
     conversation.deletedBy = [];
 
-    // Only update lastMessage immediately if it's not scheduled
     if (!scheduledFor) {
-      conversation.lastMessage = imageUrl ? '📷 Photo' : message;
+      conversation.lastMessage = message;
       conversation.lastMessageSenderId = senderId;
       conversation.lastMessageAt = new Date();
     }
@@ -87,13 +48,11 @@ export const sendMessage = async (req, res, next) => {
     const senderSocketId = getReceiverSocketId(senderId.toString());
     const receiverSocketId = getReceiverSocketId(receiverId);
 
-    // If it's scheduled, only emit back to sender so their UI updates
     if (scheduledFor) {
       if (senderSocketId) {
         io.to(senderSocketId).emit('newMessage', newMessage);
       }
     } else {
-      // Normal send
       if (receiverSocketId) {
         io.to(receiverSocketId).emit('newMessage', newMessage);
       }
@@ -102,7 +61,7 @@ export const sendMessage = async (req, res, next) => {
         conversationId: conversation._id,
         senderId,
         receiverId,
-        lastMessage: imageUrl ? '📷 Photo' : message,
+        lastMessage: message,
         lastMessageSenderId: senderId,
         lastMessageAt: conversation.lastMessageAt,
       };
@@ -113,120 +72,10 @@ export const sendMessage = async (req, res, next) => {
 
     res.status(201).json(newMessage);
   } catch (error) {
-    if (req.file?.path && fs.existsSync(req.file.path)) {
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch (cleanupError) {
-        console.error("Failed to clean up file on error:", cleanupError);
-      }
-    }
     next(error);
   }
 };
 
-export const sendVoiceMessage = async (req, res, next) => {
-  try {
-    const { replyTo, duration } = req.body;
-    const audioPath = req.file?.path;
-    const { id: receiverId } = req.params;
-    const senderId = req.user._id;
-
-    if (!audioPath) {
-      return res.status(400).json({ message: "Voice message audio is required" });
-    }
-
-    let conversation = await Conversation.findOne({
-      participants: { $all: [senderId, receiverId] },
-    });
-
-    if (!conversation) {
-      conversation = await Conversation.create({
-        participants: [senderId, receiverId],
-      });
-    }
-
-    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-      if (fs.existsSync(audioPath)) fs.unlinkSync(audioPath);
-      return res.status(500).json({ message: "Cloudinary configuration is missing on the server." });
-    }
-
-    let audioUrl = "";
-    let audioSize = req.file.size;
-    let audioFormat = req.file.mimetype;
-
-    try {
-      const uploadResponse = await cloudinary.uploader.upload(audioPath, {
-        folder: "chat_voice_messages",
-        resource_type: "video", // Cloudinary treats audio as video for upload purposes
-      });
-
-      audioUrl = uploadResponse.secure_url;
-    } catch (err) {
-      console.error("Cloudinary Audio Upload Error:", err);
-      throw err;
-    } finally {
-      if (fs.existsSync(audioPath)) {
-        fs.unlinkSync(audioPath);
-      }
-    }
-
-    let newMessage = new Message({
-      senderId,
-      receiverId,
-      message: "",
-      image: "",
-      audio: audioUrl,
-      audioDuration: duration ? parseFloat(duration) : 0,
-      audioSize,
-      audioFormat,
-      messageType: 'voice',
-      replyTo: replyTo || null,
-      status: 'sent',
-    });
-
-    conversation.messages.push(newMessage._id);
-    conversation.deletedBy = [];
-    conversation.lastMessage = '🎤 Voice message';
-    conversation.lastMessageSenderId = senderId;
-    conversation.lastMessageAt = new Date();
-
-    await Promise.all([conversation.save(), newMessage.save()]);
-
-    if (newMessage.replyTo) {
-      await newMessage.populate('replyTo', 'message senderId');
-    }
-
-    const senderSocketId = getReceiverSocketId(senderId.toString());
-    const receiverSocketId = getReceiverSocketId(receiverId);
-
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit('newMessage', newMessage);
-    }
-
-    const convUpdate = {
-      conversationId: conversation._id,
-      senderId,
-      receiverId,
-      lastMessage: '🎤 Voice message',
-      lastMessageSenderId: senderId,
-      lastMessageAt: conversation.lastMessageAt,
-    };
-
-    if (senderSocketId) io.to(senderSocketId).emit('conversation:update', convUpdate);
-    if (receiverSocketId) io.to(receiverSocketId).emit('conversation:update', convUpdate);
-
-    res.status(201).json(newMessage);
-  } catch (error) {
-    if (req.file?.path && fs.existsSync(req.file.path)) {
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch (cleanupError) {
-        console.error("Failed to clean up audio file on error:", cleanupError);
-      }
-    }
-    next(error);
-  }
-};
 
 export const getMessages = async (req, res, next) => {
   try {
