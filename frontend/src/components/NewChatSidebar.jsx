@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import Spinner from './Spinner';
 import { useConversationStore } from '../store/useConversationStore';
 import { useSocketStore } from '../store/useSocketStore';
+import { UserX } from 'lucide-react';
 
 const NewChatSidebar = ({ isOpen, onClose, setSelectedUser }) => {
   const [search, setSearch] = useState('');
@@ -79,7 +80,12 @@ const NewChatSidebar = ({ isOpen, onClose, setSelectedUser }) => {
         {loading ? (
           <div className="flex justify-center p-4"><Spinner /></div>
         ) : search.length > 0 && results.length === 0 ? (
-          <div className="text-center text-[#667781] dark:text-gray-400 p-6 text-sm">No contacts found</div>
+          <div className="flex flex-col items-center justify-center p-10 text-center animate-fade-in">
+            <div className="w-20 h-20 bg-[#f0f2f5] dark:bg-gray-800 rounded-full flex items-center justify-center mb-4 transition-transform hover:scale-105 duration-300">
+              <UserX size={40} className="text-[#667781] dark:text-gray-400" />
+            </div>
+            <p className="text-[#667781] dark:text-gray-400 text-[15px]">No contacts found for "{search}"</p>
+          </div>
         ) : (
           results.map((user) => {
             const isOnline = onlineUsers.includes(user._id);

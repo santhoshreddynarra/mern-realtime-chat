@@ -1,10 +1,11 @@
-const Spinner = () => {
+import { Loader2 } from 'lucide-react';
+
+const Spinner = ({ size = "w-8 h-8" }) => {
   return (
-    <div className="flex justify-center items-center p-4">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    <div className="flex justify-center items-center h-full w-full min-h-[100px]">
+      <Loader2 className={`animate-spin text-[#00a884] ${size}`} />
     </div>
   );
 };
 
 export default Spinner;
-

@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import useListenMessages from '../hooks/useListenMessages';
 import useTyping from '../hooks/useTyping';
 import Spinner from './Spinner';
+import { MessageSquareOff, MessageSquare } from 'lucide-react';
 
 const MessageContainer = ({ selectedUser, setSelectedUser }) => {
   const [messages, setMessages] = useState([]);
@@ -219,22 +220,23 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
   if (!selectedUser) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-[#f0f2f5] dark:bg-gray-900 h-full border-b-[6px] border-[#00a884] transition-colors">
-        <div className="text-center px-4 max-w-md">
+        <div className="text-center px-4 max-w-md animate-fade-in-up">
           {conversations.length === 0 ? (
             <>
-              <h1 className="text-3xl font-light text-[#41525d] dark:text-gray-100 mb-4 mt-8">Welcome to MERN Chat</h1>
-              <p className="text-[#667781] dark:text-gray-400 text-[15px] mb-6">Search for a user to start your first conversation.</p>
-              <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <svg viewBox="0 0 24 24" width="48" height="48" className="text-gray-400" fill="currentColor">
-                  <path d="M15.009 13.805h-.636l-.22-.219a5.184 5.184 0 0 0 1.256-3.386 5.207 5.207 0 1 0-5.207 5.208 5.183 5.183 0 0 0 3.385-1.255l.221.22v.635l4.004 3.999 1.194-1.195-3.997-4.007zm-4.808 0a3.605 3.605 0 1 1 0-7.21 3.605 3.605 0 0 1 0 7.21z"></path>
-                </svg>
+              <div className="w-24 h-24 bg-[#00a884]/10 rounded-full mx-auto mb-6 flex items-center justify-center transition-transform hover:scale-105 duration-300">
+                <MessageSquareOff size={48} className="text-[#00a884]" />
               </div>
+              <h1 className="text-3xl font-light text-[#41525d] dark:text-gray-100 mb-3">Welcome to MERN Chat</h1>
+              <p className="text-[#667781] dark:text-gray-400 text-[15px] mb-6 leading-relaxed">Connect instantly with anyone. Search for a user in the sidebar to start your first conversation.</p>
             </>
           ) : (
             <>
-              <h1 className="text-3xl font-light text-[#41525d] dark:text-gray-100 mb-4 mt-8">MERN Web</h1>
-              <p className="text-[#667781] dark:text-gray-400 text-[14px]">Send and receive messages without keeping your phone online.</p>
-              <p className="text-[#667781] dark:text-gray-400 text-[14px]">Use WhatsApp-style Real-Time Chat on up to 4 linked devices and 1 phone at the same time.</p>
+              <div className="w-24 h-24 bg-[#00a884]/10 rounded-full mx-auto mb-6 flex items-center justify-center transition-transform hover:scale-105 duration-300">
+                <MessageSquare size={48} className="text-[#00a884]" />
+              </div>
+              <h1 className="text-3xl font-light text-[#41525d] dark:text-gray-100 mb-3">MERN Web</h1>
+              <p className="text-[#667781] dark:text-gray-400 text-[14px] leading-relaxed mb-2">Send and receive messages without keeping your phone online.</p>
+              <p className="text-[#667781] dark:text-gray-400 text-[14px] leading-relaxed">Use WhatsApp-style Real-Time Chat on up to 4 linked devices and 1 phone at the same time.</p>
             </>
           )}
         </div>
@@ -550,7 +552,7 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
 
       {/* Right Info Panel */}
       {isInfoPanelOpen && (
-        <div className="w-[350px] shrink-0 bg-[#f0f2f5] dark:bg-gray-900 flex flex-col h-full overflow-y-auto animate-slide-in border-l border-gray-200 dark:border-gray-800 transition-colors">
+        <div className="absolute xl:relative right-0 top-0 w-full sm:w-[350px] shrink-0 bg-[#f0f2f5] dark:bg-gray-900 flex flex-col h-full overflow-y-auto animate-slide-in border-l border-gray-200 dark:border-gray-800 transition-colors z-20 shadow-2xl xl:shadow-none">
           <div className="h-16 flex items-center px-6 shrink-0 bg-white dark:bg-gray-800 transition-colors">
             <button onClick={() => setIsInfoPanelOpen(false)} className="mr-6 text-[#54656f]">
               <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">

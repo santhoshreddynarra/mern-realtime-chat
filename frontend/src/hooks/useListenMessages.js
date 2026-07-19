@@ -66,7 +66,7 @@ const useListenMessages = (setMessages, selectedUser) => {
       socket.off('message:delivered', handleMessageDelivered);
       socket.off('message:sent', handleMessageSent);
     };
-  }, [socket, setMessages, authUser]);
+  }, [socket, setMessages, authUser, selectedUser]);
 };
 
 export default useListenMessages;
