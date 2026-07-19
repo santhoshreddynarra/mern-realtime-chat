@@ -92,9 +92,12 @@ chatApp/
 │   ├── utils/
 │   │   └── generateToken.js
 │   ├── server.js
-│   └── .env
+│   ├── .env
+│   └── .env.example           # Environment template
 │
 └── frontend/
+    ├── .env
+    ├── .env.example           # Environment template
     └── src/
         ├── api/
         │   └── axiosInstance.js   # Axios with base URL from env
@@ -152,6 +155,8 @@ npm install
 ```
 
 ### 3. Configure environment variables
+
+Copy the provided `.env.example` templates to `.env` in both directories and adjust the values as needed.
 
 **`backend/.env`**
 ```env
