@@ -446,22 +446,7 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
         {/* Input Area */}
         <div className="flex flex-col z-10 shrink-0 border-l border-gray-200">
 
-          {/* Image Preview */}
-          {imagePreview && (
-            <div className="bg-[#f0f2f5] px-4 pt-2 flex items-center relative">
-              <div className="relative inline-block mt-2 mb-1">
-                <img src={imagePreview} alt="Preview" className="h-20 rounded-lg object-cover border border-gray-300 shadow-sm" />
-                <button
-                  type="button"
-                  onClick={removeImage}
-                  className="absolute -top-2 -right-2 bg-gray-600/80 hover:bg-gray-800 text-white rounded-full p-1 w-6 h-6 flex items-center justify-center transition-colors"
-                  title="Remove image"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-          )}
+
 
           {/* Reply Preview */}
           {replyingTo && (
