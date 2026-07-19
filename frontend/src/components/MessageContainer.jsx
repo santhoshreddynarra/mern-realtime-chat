@@ -218,12 +218,12 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
 
   if (!selectedUser) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-[#f0f2f5] h-full border-b-[6px] border-[#00a884]">
+      <div className="flex-1 flex flex-col items-center justify-center bg-[#f0f2f5] dark:bg-gray-900 h-full border-b-[6px] border-[#00a884] transition-colors">
         <div className="text-center px-4 max-w-md">
           {conversations.length === 0 ? (
             <>
-              <h1 className="text-3xl font-light text-[#41525d] mb-4 mt-8">Welcome to MERN Chat</h1>
-              <p className="text-[#667781] text-[15px] mb-6">Search for a user to start your first conversation.</p>
+              <h1 className="text-3xl font-light text-[#41525d] dark:text-gray-100 mb-4 mt-8">Welcome to MERN Chat</h1>
+              <p className="text-[#667781] dark:text-gray-400 text-[15px] mb-6">Search for a user to start your first conversation.</p>
               <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">
                 <svg viewBox="0 0 24 24" width="48" height="48" className="text-gray-400" fill="currentColor">
                   <path d="M15.009 13.805h-.636l-.22-.219a5.184 5.184 0 0 0 1.256-3.386 5.207 5.207 0 1 0-5.207 5.208 5.183 5.183 0 0 0 3.385-1.255l.221.22v.635l4.004 3.999 1.194-1.195-3.997-4.007zm-4.808 0a3.605 3.605 0 1 1 0-7.21 3.605 3.605 0 0 1 0 7.21z"></path>
@@ -232,9 +232,9 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
             </>
           ) : (
             <>
-              <h1 className="text-3xl font-light text-[#41525d] mb-4 mt-8">MERN Web</h1>
-              <p className="text-[#667781] text-[14px]">Send and receive messages without keeping your phone online.</p>
-              <p className="text-[#667781] text-[14px]">Use WhatsApp-style Real-Time Chat on up to 4 linked devices and 1 phone at the same time.</p>
+              <h1 className="text-3xl font-light text-[#41525d] dark:text-gray-100 mb-4 mt-8">MERN Web</h1>
+              <p className="text-[#667781] dark:text-gray-400 text-[14px]">Send and receive messages without keeping your phone online.</p>
+              <p className="text-[#667781] dark:text-gray-400 text-[14px]">Use WhatsApp-style Real-Time Chat on up to 4 linked devices and 1 phone at the same time.</p>
             </>
           )}
         </div>
@@ -243,11 +243,11 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
   }
 
   return (
-    <div className="flex-1 flex h-full overflow-hidden relative bg-white">
+    <div className="flex-1 flex h-full overflow-hidden relative bg-white dark:bg-gray-900 transition-colors">
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col h-full relative border-r border-gray-200 min-w-0">
+      <div className="flex-1 flex flex-col h-full relative border-r border-gray-200 dark:border-gray-800 min-w-0">
         {/* Header */}
-        <div className="bg-[#f0f2f5] p-3 flex items-center justify-between shrink-0 h-16 border-l border-gray-200 z-10">
+        <div className="bg-[#f0f2f5] dark:bg-gray-800 p-3 flex items-center justify-between shrink-0 h-16 border-l border-gray-200 dark:border-gray-800 z-10 transition-colors">
           <div className="flex items-center gap-3">
             {/* Back button for mobile */}
             <button onClick={() => {
@@ -262,7 +262,7 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
               {selectedUser.name.charAt(0).toUpperCase()}
             </div>
             <div className="flex flex-col">
-              <span className="font-normal text-[16px] text-[#111b21] leading-tight">{selectedUser.name}</span>
+              <span className="font-normal text-[16px] text-[#111b21] dark:text-gray-100 leading-tight">{selectedUser.name}</span>
               <span className={`text-[13px] ${isTyping ? 'text-[#00a884]' : 'text-[#667781]'} h-4`}>
                 {isTyping ? 'typing...' : onlineUsers.includes(selectedUser._id) ? 'online' : (offlineUsers[selectedUser._id] || selectedUser.lastSeen) ? `last seen ${new Date(offlineUsers[selectedUser._id] || selectedUser.lastSeen).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}` : 'offline'}
               </span>
@@ -270,21 +270,21 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
           </div>
 
           {/* Header Icons */}
-          <div className="flex gap-4 text-[#54656f] mr-2 relative">
-            <svg onClick={() => setIsMessageSearchOpen(!isMessageSearchOpen)} viewBox="0 0 24 24" width="24" height="24" className="cursor-pointer hover:text-black transition-colors" fill="currentColor">
+          <div className="flex gap-4 text-[#54656f] dark:text-gray-300 mr-2 relative">
+            <svg onClick={() => setIsMessageSearchOpen(!isMessageSearchOpen)} viewBox="0 0 24 24" width="24" height="24" className="cursor-pointer hover:text-black dark:hover:text-white transition-colors" fill="currentColor">
               <path d="M15.9 14.3H15l-.3-.3c1-1.1 1.6-2.7 1.6-4.3 0-3.7-3-6.7-6.7-6.7S3 6 3 9.7s3 6.7 6.7 6.7c1.6 0 3.2-.6 4.3-1.6l.3.3v.8l5.1 5.1 1.5-1.5-5-5.2zm-6.2 0c-2.6 0-4.6-2.1-4.6-4.6s2.1-4.6 4.6-4.6 4.6 2.1 4.6 4.6-2-4.6-4.6-4.6z"></path>
             </svg>
             <div ref={menuRef} className="relative">
-              <svg onClick={() => setIsHeaderMenuOpen(!isHeaderMenuOpen)} viewBox="0 0 24 24" width="24" height="24" className={`cursor-pointer hover:text-black transition-colors ${isHeaderMenuOpen ? 'text-black bg-black/5 rounded-full' : ''}`} fill="currentColor">
+              <svg onClick={() => setIsHeaderMenuOpen(!isHeaderMenuOpen)} viewBox="0 0 24 24" width="24" height="24" className={`cursor-pointer hover:text-black dark:hover:text-white transition-colors ${isHeaderMenuOpen ? 'text-black dark:text-white bg-black/5 dark:bg-white/10 rounded-full' : ''}`} fill="currentColor">
                 <path d="M12 7a2 2 0 1 0-.001-4.001A2 2 0 0 0 12 7zm0 2a2 2 0 1 0-.001 3.999A2 2 0 0 0 12 9zm0 6a2 2 0 1 0-.001 3.999A2 2 0 0 0 12 15z"></path>
               </svg>
 
               {isHeaderMenuOpen && (
-                <div className="absolute right-0 top-10 w-48 bg-white shadow-[0_2px_5px_0_rgba(11,20,26,.26),0_2px_10px_0_rgba(11,20,26,.16)] rounded-[3px] py-2 z-50 animate-fade-in text-[#3b4a54] text-[14.5px]">
-                  <button onClick={() => { setIsInfoPanelOpen(true); setIsHeaderMenuOpen(false); }} className="w-full text-left px-6 py-3 hover:bg-[#f5f6f6] transition-colors">Contact info</button>
-                  <button onClick={handleClearChat} className="w-full text-left px-6 py-3 hover:bg-[#f5f6f6] transition-colors">Clear chat</button>
-                  <button onClick={handleExportChat} className="w-full text-left px-6 py-3 hover:bg-[#f5f6f6] transition-colors">Export chat</button>
-                  <button onClick={handleDeleteConversation} className="w-full text-left px-6 py-3 hover:bg-[#f5f6f6] transition-colors text-red-600">Delete chat</button>
+                <div className="absolute right-0 top-10 w-48 bg-white dark:bg-gray-800 shadow-[0_2px_5px_0_rgba(11,20,26,.26),0_2px_10px_0_rgba(11,20,26,.16)] rounded-[3px] py-2 z-50 animate-fade-in text-[#3b4a54] dark:text-gray-200 text-[14.5px]">
+                  <button onClick={() => { setIsInfoPanelOpen(true); setIsHeaderMenuOpen(false); }} className="w-full text-left px-6 py-3 hover:bg-[#f5f6f6] dark:hover:bg-gray-700 transition-colors">Contact info</button>
+                  <button onClick={handleClearChat} className="w-full text-left px-6 py-3 hover:bg-[#f5f6f6] dark:hover:bg-gray-700 transition-colors">Clear chat</button>
+                  <button onClick={handleExportChat} className="w-full text-left px-6 py-3 hover:bg-[#f5f6f6] dark:hover:bg-gray-700 transition-colors">Export chat</button>
+                  <button onClick={handleDeleteConversation} className="w-full text-left px-6 py-3 hover:bg-[#f5f6f6] dark:hover:bg-gray-700 transition-colors text-red-600 dark:text-red-400">Delete chat</button>
                 </div>
               )}
             </div>
@@ -293,15 +293,15 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
 
         {/* Message Search Bar */}
         {isMessageSearchOpen && (
-          <div className="bg-white p-2 border-b border-gray-200 flex items-center gap-2 shadow-sm z-10 shrink-0">
-            <div className="flex-1 bg-[#f0f2f5] rounded-lg flex items-center px-3 py-1">
-              <svg viewBox="0 0 24 24" width="20" height="20" className="text-[#54656f]" fill="currentColor">
+          <div className="bg-white dark:bg-gray-800 p-2 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2 shadow-sm z-10 shrink-0 transition-colors">
+            <div className="flex-1 bg-[#f0f2f5] dark:bg-gray-700 rounded-lg flex items-center px-3 py-1 transition-colors">
+              <svg viewBox="0 0 24 24" width="20" height="20" className="text-[#54656f] dark:text-gray-300" fill="currentColor">
                 <path d="M15.9 14.3H15l-.3-.3c1-1.1 1.6-2.7 1.6-4.3 0-3.7-3-6.7-6.7-6.7S3 6 3 9.7s3 6.7 6.7 6.7c1.6 0 3.2-.6 4.3-1.6l.3.3v.8l5.1 5.1 1.5-1.5-5-5.2zm-6.2 0c-2.6 0-4.6-2.1-4.6-4.6s2.1-4.6 4.6-4.6 4.6 2.1 4.6 4.6-2-4.6-4.6-4.6z"></path>
               </svg>
               <input
                 type="text"
                 autoFocus
-                className="w-full bg-transparent border-none focus:outline-none ml-3 text-[15px]"
+                className="w-full bg-transparent border-none focus:outline-none ml-3 text-[15px] dark:text-white"
                 placeholder="Search..."
                 value={messageSearchQuery}
                 onChange={(e) => setMessageSearchQuery(e.target.value)}
@@ -311,18 +311,18 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
               />
             </div>
             {searchMatches.length > 0 && (
-              <span className="text-[13px] text-[#54656f] mx-2">
+              <span className="text-[13px] text-[#54656f] dark:text-gray-300 mx-2">
                 {currentMatchIndex + 1} of {searchMatches.length}
               </span>
             )}
             <div className="flex gap-1">
-              <button onClick={handleNextMatch} disabled={searchMatches.length === 0} className="p-2 text-[#54656f] disabled:opacity-30 hover:bg-gray-100 rounded">
+              <button onClick={handleNextMatch} disabled={searchMatches.length === 0} className="p-2 text-[#54656f] dark:text-gray-300 disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 17.5l-6-6 1.4-1.4 4.6 4.6 4.6-4.6 1.4 1.4z"></path></svg>
               </button>
-              <button onClick={handlePrevMatch} disabled={searchMatches.length === 0} className="p-2 text-[#54656f] disabled:opacity-30 hover:bg-gray-100 rounded">
+              <button onClick={handlePrevMatch} disabled={searchMatches.length === 0} className="p-2 text-[#54656f] dark:text-gray-300 disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 6.5l-6 6 1.4 1.4 4.6-4.6 4.6 4.6 1.4-1.4z"></path></svg>
               </button>
-              <button onClick={() => { setIsMessageSearchOpen(false); setMessageSearchQuery(''); }} className="p-2 text-[#54656f] hover:bg-gray-100 rounded ml-1">
+              <button onClick={() => { setIsMessageSearchOpen(false); setMessageSearchQuery(''); }} className="p-2 text-[#54656f] dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded ml-1 transition-colors">
                 ✕
               </button>
             </div>
@@ -331,7 +331,7 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
 
         {/* Messages */}
         <div
-          className="flex-1 p-4 overflow-y-auto bg-[#efeae2] relative"
+          className="flex-1 p-4 overflow-y-auto bg-[#efeae2] dark:bg-[#0b141a] relative transition-colors"
           onScroll={handleScroll}
           style={{ backgroundImage: "url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')", backgroundRepeat: 'repeat', backgroundSize: '400px', opacity: 0.9 }}
         >
@@ -339,7 +339,7 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
             <Spinner />
           ) : messages.length === 0 ? (
             <div className="flex justify-center mt-4">
-              <span className="bg-[#ffeecd] text-[#54656f] text-[12.5px] px-3 py-1.5 rounded-lg shadow-sm text-center">
+              <span className="bg-[#ffeecd] dark:bg-[#182229] text-[#54656f] dark:text-gray-300 text-[12.5px] px-3 py-1.5 rounded-lg shadow-sm text-center transition-colors">
                 Messages and calls are end-to-end encrypted.<br />No one outside of this chat can read or listen to them.
               </span>
             </div>
@@ -358,7 +358,7 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
                     </button>
                   )}
 
-                  <div className={`relative max-w-[85%] md:max-w-[65%] min-w-0 px-2 py-1 rounded-lg shadow-sm ${isOwn ? 'bg-[#d9fdd3] rounded-tr-none' : 'bg-white rounded-tl-none'} ${msg.status === 'scheduled' ? 'opacity-80 border border-dashed border-[#00a884]' : ''}`}>
+                  <div className={`relative max-w-[85%] md:max-w-[65%] min-w-0 px-2 py-1 rounded-lg shadow-sm transition-colors ${isOwn ? 'bg-[#d9fdd3] dark:bg-[#005c4b] rounded-tr-none' : 'bg-white dark:bg-[#202c33] rounded-tl-none'} ${msg.status === 'scheduled' ? 'opacity-80 border border-dashed border-[#00a884]' : ''}`}>
                     <div className="flex flex-col w-full">
 
                       {/* Quoted Reply Block */}
@@ -372,7 +372,7 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
                           <span className="text-[#02a884] text-[12.5px] font-medium leading-none mb-1">
                             {msg.replyTo.senderId === authUser._id ? 'You' : selectedUser.name}
                           </span>
-                          <span className="text-[#667781] text-[13px] leading-[18px] line-clamp-3 overflow-hidden text-ellipsis break-words">
+                          <span className="text-[#667781] dark:text-gray-300 text-[13px] leading-[18px] line-clamp-3 overflow-hidden text-ellipsis break-words">
                             {msg.replyTo.message}
                           </span>
                         </div>
@@ -382,7 +382,7 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
                         <div className="flex flex-col w-full max-w-full">
                           {msg.message && (
                             <span
-                              className="text-[14.2px] text-[#111b21] break-words whitespace-pre-wrap leading-[19px] max-w-full rounded"
+                              className="text-[14.2px] text-[#111b21] dark:text-gray-100 break-words whitespace-pre-wrap leading-[19px] max-w-full rounded"
                               style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
                               id={`msg-${msg._id}`}
                             >
@@ -390,7 +390,7 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-[2px] text-[11px] text-[#667781] shrink-0 ml-auto pl-3 pb-[1px]">
+                        <div className="flex items-center gap-[2px] text-[11px] text-[#667781] dark:text-gray-400 shrink-0 ml-auto pl-3 pb-[1px]">
                           <span className="leading-none pt-[2px]">{time}</span>
                           {isOwn && (
                             msg.status === 'scheduled' ? (
@@ -434,7 +434,7 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
               setIsUserNearBottom(true);
               messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="absolute right-4 bottom-[80px] bg-white text-[#54656f] p-2 rounded-full shadow-lg hover:bg-[#f0f2f5] transition-colors z-20 border border-gray-200"
+            className="absolute right-4 bottom-[80px] bg-white dark:bg-gray-800 text-[#54656f] dark:text-gray-300 p-2 rounded-full shadow-lg hover:bg-[#f0f2f5] dark:hover:bg-gray-700 transition-colors z-20 border border-gray-200 dark:border-gray-700"
             title="Scroll to bottom"
           >
             <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
@@ -444,19 +444,19 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
         )}
 
         {/* Input Area */}
-        <div className="flex flex-col z-10 shrink-0 border-l border-gray-200">
+        <div className="flex flex-col z-10 shrink-0 border-l border-gray-200 dark:border-gray-800">
 
 
 
           {/* Reply Preview */}
           {replyingTo && (
-            <div className="bg-[#f0f2f5] px-4 pt-2 flex items-center relative">
-              <div className="bg-black/5 rounded-[4px] p-2 border-l-[4px] border-[#02a884] flex-1 flex items-start justify-between">
+            <div className="bg-[#f0f2f5] dark:bg-gray-800 px-4 pt-2 flex items-center relative transition-colors">
+              <div className="bg-black/5 dark:bg-black/20 rounded-[4px] p-2 border-l-[4px] border-[#02a884] flex-1 flex items-start justify-between">
                 <div className="flex flex-col w-full">
                   <span className="text-[#02a884] text-[12.5px] font-medium leading-none mb-1">
                     {replyingTo.senderId === authUser._id ? 'You' : selectedUser.name}
                   </span>
-                  <span className="text-[#667781] text-[13px] leading-[18px] line-clamp-1 overflow-hidden text-ellipsis break-words">
+                  <span className="text-[#667781] dark:text-gray-300 text-[13px] leading-[18px] line-clamp-1 overflow-hidden text-ellipsis break-words">
                     {replyingTo.message}
                   </span>
                 </div>
@@ -476,13 +476,13 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
 
           {/* Schedule date/time picker */}
           {isScheduling && (
-            <div className="bg-[#f0f2f5] px-4 pt-2 pb-0 flex items-center gap-2">
+            <div className="bg-[#f0f2f5] dark:bg-gray-800 px-4 pt-2 pb-0 flex items-center gap-2 transition-colors">
               <svg viewBox="0 0 24 24" width="18" height="18" className="text-[#00a884] shrink-0" fill="currentColor">
                 <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.2 14.2L11 11V6h1.5v4.4l4.5 4.5-.8.9z"></path>
               </svg>
               <input
                 type="datetime-local"
-                className="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-[13px] focus:outline-none text-[#111b21] focus:border-[#00a884] transition-colors"
+                className="flex-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1.5 text-[13px] focus:outline-none text-[#111b21] dark:text-gray-100 focus:border-[#00a884] transition-colors"
                 value={scheduleDate}
                 min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
                 onChange={(e) => setScheduleDate(e.target.value)}
@@ -500,10 +500,10 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
             </div>
           )}
 
-          <form onSubmit={handleSendMessage} className="bg-[#f0f2f5] px-4 py-3 flex items-center gap-3 w-full">
+          <form onSubmit={handleSendMessage} className="bg-[#f0f2f5] dark:bg-gray-800 px-4 py-3 flex items-center gap-3 w-full transition-colors">
             <input
               type="text"
-              className="flex-1 bg-white border-none rounded-lg px-4 py-[9px] text-[15px] focus:outline-none placeholder-[#8696a0] min-w-0"
+              className="flex-1 bg-white dark:bg-gray-700 border-none rounded-lg px-4 py-[9px] text-[15px] focus:outline-none placeholder-[#8696a0] dark:placeholder-gray-400 text-[#111b21] dark:text-gray-100 min-w-0 transition-colors"
               placeholder="Type a message"
               value={newMessage}
               onChange={(e) => {
@@ -550,48 +550,48 @@ const MessageContainer = ({ selectedUser, setSelectedUser }) => {
 
       {/* Right Info Panel */}
       {isInfoPanelOpen && (
-        <div className="w-[350px] shrink-0 bg-[#f0f2f5] flex flex-col h-full overflow-y-auto animate-slide-in border-l border-gray-200">
-          <div className="h-16 flex items-center px-6 shrink-0 bg-white">
+        <div className="w-[350px] shrink-0 bg-[#f0f2f5] dark:bg-gray-900 flex flex-col h-full overflow-y-auto animate-slide-in border-l border-gray-200 dark:border-gray-800 transition-colors">
+          <div className="h-16 flex items-center px-6 shrink-0 bg-white dark:bg-gray-800 transition-colors">
             <button onClick={() => setIsInfoPanelOpen(false)} className="mr-6 text-[#54656f]">
               <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
                 <path d="M12 4l1.4 1.4L7.8 11H20v2H7.8l5.6 5.6L12 20l-8-8 8-8z"></path>
               </svg>
             </button>
-            <span className="text-[16px] font-medium text-[#111b21]">Contact info</span>
+            <span className="text-[16px] font-medium text-[#111b21] dark:text-gray-100">Contact info</span>
           </div>
 
-          <div className="bg-white flex flex-col items-center py-8 px-4 shadow-sm mb-2">
+          <div className="bg-white dark:bg-gray-800 flex flex-col items-center py-8 px-4 shadow-sm mb-2 transition-colors">
             <div className="w-[200px] h-[200px] bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-6xl font-bold mb-5 shadow-sm">
               {selectedUser.name.charAt(0).toUpperCase()}
             </div>
-            <h2 className="text-[22px] text-[#111b21] mb-1">{selectedUser.name}</h2>
-            <span className="text-[16px] text-[#667781] mb-1">
+            <h2 className="text-[22px] text-[#111b21] dark:text-gray-100 mb-1">{selectedUser.name}</h2>
+            <span className="text-[16px] text-[#667781] dark:text-gray-400 mb-1">
               {selectedUser.email}
             </span>
-            <span className={`text-[14px] ${onlineUsers.includes(selectedUser._id) ? 'text-[#00a884]' : 'text-[#667781]'}`}>
+            <span className={`text-[14px] ${onlineUsers.includes(selectedUser._id) ? 'text-[#00a884]' : 'text-[#667781] dark:text-gray-400'}`}>
               {onlineUsers.includes(selectedUser._id) ? 'Online' : (offlineUsers[selectedUser._id] || selectedUser.lastSeen) ? `Last seen ${new Date(offlineUsers[selectedUser._id] || selectedUser.lastSeen).toLocaleString()}` : 'Offline'}
             </span>
           </div>
 
-          <div className="bg-white px-7 py-4 shadow-sm mb-2">
+          <div className="bg-white dark:bg-gray-800 px-7 py-4 shadow-sm mb-2 transition-colors">
             <span className="text-[14px] text-[#00a884] mb-2 block font-medium">About</span>
-            <span className="text-[16px] text-[#111b21]">{selectedUser.about || 'Hey there! I am using MERN Chat.'}</span>
+            <span className="text-[16px] text-[#111b21] dark:text-gray-100">{selectedUser.about || 'Hey there! I am using MERN Chat.'}</span>
           </div>
 
-          <div className="bg-white px-7 py-4 shadow-sm mb-2">
+          <div className="bg-white dark:bg-gray-800 px-7 py-4 shadow-sm mb-2 transition-colors">
             <span className="text-[14px] text-[#00a884] mb-2 block font-medium">Chat details</span>
             <div className="flex flex-col gap-3 mt-2">
               <div className="flex justify-between items-center">
-                <span className="text-[15px] text-[#111b21]">Total messages</span>
-                <span className="text-[14px] text-[#667781]">{messages.length}</span>
+                <span className="text-[15px] text-[#111b21] dark:text-gray-100">Total messages</span>
+                <span className="text-[14px] text-[#667781] dark:text-gray-400">{messages.length}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-[15px] text-[#111b21]">Media shared</span>
-                <span className="text-[14px] text-[#667781]">0</span>
+                <span className="text-[15px] text-[#111b21] dark:text-gray-100">Media shared</span>
+                <span className="text-[14px] text-[#667781] dark:text-gray-400">0</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-[15px] text-[#111b21]">Joined date</span>
-                <span className="text-[14px] text-[#667781]">{new Date(selectedUser.createdAt).toLocaleDateString()}</span>
+                <span className="text-[15px] text-[#111b21] dark:text-gray-100">Joined date</span>
+                <span className="text-[14px] text-[#667781] dark:text-gray-400">{new Date(selectedUser.createdAt).toLocaleDateString()}</span>
               </div>
             </div>
           </div>

@@ -33,7 +33,7 @@ const ProfileSidebar = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className={`absolute top-0 left-0 h-full w-full bg-[#f0f2f5] z-30 flex flex-col transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+    <div className={`absolute top-0 left-0 h-full w-full bg-[#f0f2f5] dark:bg-gray-900 z-30 flex flex-col transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       {/* Header */}
       <div className="bg-[#008069] text-white flex items-center h-28 px-4 pb-4 pt-12 shrink-0">
         <button onClick={onClose} className="mr-6 hover:bg-black/10 p-2 rounded-full transition-colors">
@@ -44,9 +44,9 @@ const ProfileSidebar = ({ isOpen, onClose }) => {
         <h1 className="text-xl font-semibold">Profile</h1>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto bg-[#f0f2f5] dark:bg-gray-900">
         {/* Avatar Section */}
-        <div className="bg-[#f0f2f5] py-7 flex justify-center">
+        <div className="bg-[#f0f2f5] dark:bg-gray-900 py-7 flex justify-center">
           <div className="relative group cursor-pointer w-[200px] h-[200px] rounded-full overflow-hidden bg-blue-100 flex justify-center items-center">
             {authUser?.profilePic ? (
               <img src={authUser.profilePic} alt="Profile" className="w-full h-full object-cover" />
@@ -63,30 +63,30 @@ const ProfileSidebar = ({ isOpen, onClose }) => {
         </div>
 
         {/* Name Section */}
-        <div className="bg-white px-7 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.08)] mb-2">
-          <p className="text-[#008069] text-[14px] mb-4">Your name</p>
+        <div className="bg-white dark:bg-gray-800 px-7 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.08)] mb-2">
+          <p className="text-[#008069] dark:text-[#00a884] text-[14px] mb-4">Your name</p>
           <div className="flex items-center border-b-2 border-transparent focus-within:border-[#008069] pb-1 transition-colors">
             <input 
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full text-[17px] text-[#3b4a54] outline-none"
+              className="w-full text-[17px] text-[#3b4a54] dark:text-gray-100 bg-transparent outline-none"
             />
           </div>
-          <p className="text-[#667781] text-[13px] mt-4">
+          <p className="text-[#667781] dark:text-gray-400 text-[13px] mt-4">
             This is not your username or pin. This name will be visible to your WhatsApp contacts.
           </p>
         </div>
 
         {/* About Section */}
-        <div className="bg-white px-7 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
-          <p className="text-[#008069] text-[14px] mb-4">About</p>
+        <div className="bg-white dark:bg-gray-800 px-7 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
+          <p className="text-[#008069] dark:text-[#00a884] text-[14px] mb-4">About</p>
           <div className="flex items-center border-b-2 border-transparent focus-within:border-[#008069] pb-1 transition-colors">
             <input 
               type="text"
               value={about}
               onChange={(e) => setAbout(e.target.value)}
-              className="w-full text-[17px] text-[#3b4a54] outline-none"
+              className="w-full text-[17px] text-[#3b4a54] dark:text-gray-100 bg-transparent outline-none"
             />
           </div>
         </div>

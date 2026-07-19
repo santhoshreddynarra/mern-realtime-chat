@@ -1,8 +1,8 @@
 @import "tailwindcss";
-
+@custom-variant dark (&:where(.dark, .dark *));
 body {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  background-color: #f9fafb; /* Tailwind gray-50 */
+  @apply bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100;
 }
