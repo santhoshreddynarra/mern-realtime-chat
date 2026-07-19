@@ -13,36 +13,46 @@ export const createOrGetConversation = async (req, res, next) => {
       throw new Error('User ID is required');
     }
 
-    // Check if conversation exists
-    let conversation = await Conversation.findOne({
-      participants: { $all: [senderId, userId] },
-    }).populate('participants', '-password');
+    const conversationKey = [senderId.toString(), userId.toString()].sort().join("_");
 
-    if (conversation) {
-      return res.status(200).json(conversation);
+    try {
+      const result = await Conversation.findOneAndUpdate(
+        { conversationKey },
+        {
+          $setOnInsert: { participants: [senderId, userId] }
+        },
+        { upsert: true, new: true, includeResultMetadata: true }
+      );
+
+      const doc = result.value || result;
+      const isNew = result.lastErrorObject ? !result.lastErrorObject.updatedExisting : (doc.createdAt.getTime() === doc.updatedAt.getTime());
+
+      await doc.populate('participants', '-password');
+
+      if (isNew) {
+        const convUpdate = {
+          conversationId: doc._id,
+          senderId: senderId.toString(),
+          receiverId: userId.toString(),
+          lastMessage: '',
+          lastMessageAt: doc.createdAt,
+          isNew: true
+        };
+
+        emitToUser(senderId.toString(), 'conversation:update', convUpdate);
+        emitToUser(userId.toString(), 'conversation:update', convUpdate);
+
+        return res.status(201).json(doc);
+      } else {
+        return res.status(200).json(doc);
+      }
+    } catch (error) {
+      if (error.code === 11000) {
+        const existingConv = await Conversation.findOne({ conversationKey }).populate('participants', '-password');
+        return res.status(200).json(existingConv);
+      }
+      throw error;
     }
-
-    // Create new conversation
-    conversation = await Conversation.create({
-      participants: [senderId, userId],
-    });
-
-    conversation = await conversation.populate('participants', '-password');
-
-    // Notify both users via Socket.IO
-    const convUpdate = {
-      conversationId: conversation._id,
-      senderId,
-      receiverId: userId,
-      lastMessage: '',
-      lastMessageAt: conversation.createdAt,
-      isNew: true
-    };
-
-    emitToUser(senderId.toString(), 'conversation:update', convUpdate);
-    emitToUser(userId.toString(), 'conversation:update', convUpdate);
-
-    res.status(201).json(conversation);
   } catch (error) {
     next(error);
   }
@@ -55,8 +65,10 @@ export const clearConversation = async (req, res, next) => {
     const { id: userToChatId } = req.params;
     const userId = req.user._id;
 
+    const conversationKey = [userId.toString(), userToChatId.toString()].sort().join("_");
+
     const conversation = await Conversation.findOne({
-      participants: { $all: [userId, userToChatId] },
+      conversationKey,
     });
 
     if (!conversation) {
@@ -84,8 +96,10 @@ export const deleteConversation = async (req, res, next) => {
     const { id: userToChatId } = req.params;
     const userId = req.user._id;
 
+    const conversationKey = [userId.toString(), userToChatId.toString()].sort().join("_");
+
     const conversation = await Conversation.findOne({
-      participants: { $all: [userId, userToChatId] },
+      conversationKey,
     });
 
     if (!conversation) {

@@ -11,14 +11,22 @@ export const sendMessage = async (req, res, next) => {
       return res.status(400).json({ message: "Message is required" });
     }
 
-    let conversation = await Conversation.findOne({
-      participants: { $all: [senderId, receiverId] },
-    });
+    const conversationKey = [senderId.toString(), receiverId.toString()].sort().join("_");
 
-    if (!conversation) {
-      conversation = await Conversation.create({
-        participants: [senderId, receiverId],
-      });
+    let conversation;
+    try {
+      const result = await Conversation.findOneAndUpdate(
+        { conversationKey },
+        { $setOnInsert: { participants: [senderId, receiverId] } },
+        { upsert: true, new: true, includeResultMetadata: true }
+      );
+      conversation = result.value || result;
+    } catch (error) {
+      if (error.code === 11000) {
+        conversation = await Conversation.findOne({ conversationKey });
+      } else {
+        throw error;
+      }
     }
 
     let newMessage = new Message({
@@ -74,9 +82,10 @@ export const getMessages = async (req, res, next) => {
   try {
     const { id: userToChatId } = req.params;
     const senderId = req.user._id;
+    const conversationKey = [senderId.toString(), userToChatId.toString()].sort().join("_");
 
     const conversation = await Conversation.findOne({
-      participants: { $all: [senderId, userToChatId] },
+      conversationKey,
     }).populate({
       path: 'messages',
       populate: { path: 'replyTo', select: 'message senderId' }
