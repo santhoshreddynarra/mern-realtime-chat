@@ -11,7 +11,7 @@ export const useSocketStore = create((set, get) => ({
     // Guard: don't create a new socket if one is already connected for this user
     if (socket && socket.connected) return;
 
-    const newSocket = io('http://localhost:5000', {
+    const newSocket = io(import.meta.env.VITE_SOCKET_URL || "/", {
       query: { userId },
       transports: ['websocket'], // Skip polling to prevent duplicate connection races
     });
